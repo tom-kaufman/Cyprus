@@ -6,13 +6,13 @@ use axum::{
     body::StreamBody,
 };
 use dotenvy::dotenv;
-use dotenvy_macro::dotenv;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::{
     net::SocketAddr,
     path::{Path, PathBuf},
     str::FromStr,
+    env,
 };
 use tokio_util::io::ReaderStream;
 use std::fs;
@@ -70,18 +70,18 @@ impl AudiobookList {
 
 async fn list_audiobooks() -> Json<AudiobookList> {
     tracing::info!("retrieving the audiobook list...");
-    Json(AudiobookList::from_directory(Path::new(dotenv!(
-        "BOOKS_DIRECTORY"
-    ))))
+    Json(AudiobookList::from_directory(Path::new(
+        &std::env::var("BOOKS_DIRECTORY").unwrap()
+    )))
 }
 
 // reference: https://github.com/tokio-rs/axum/discussions/608
 async fn return_audiobook(extract::Path(audiobook_id): extract::Path<u32>) -> impl IntoResponse {
     tracing::debug!("Request book {}", audiobook_id);
 
-    let books =  AudiobookList::from_directory(Path::new(dotenv!(
-        "BOOKS_DIRECTORY"
-    )));
+    let books =  AudiobookList::from_directory(Path::new(
+        &std::env::var("BOOKS_DIRECTORY").unwrap()
+    ));
     let book = books.books.get(&audiobook_id).unwrap();
     let file = tokio::fs::File::open(&book.file_path).await.unwrap();
 
@@ -99,7 +99,7 @@ async fn return_audiobook(extract::Path(audiobook_id): extract::Path<u32>) -> im
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    dotenvy::dotenv().unwrap();
 
     // initialize tracing
     tracing_subscriber::fmt()
@@ -113,10 +113,8 @@ async fn main() {
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from_str(dotenv!("SOCKET_ADDR")).unwrap();
-    println!("1");
+    let addr = SocketAddr::from_str(&std::env::var("SOCKET_ADDR").unwrap()).unwrap();
     tracing::debug!("listening on {}", addr);
-    println!("2");
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
