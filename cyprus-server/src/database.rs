@@ -3,6 +3,10 @@ use sqlx::{
     ConnectOptions,
 };
 
+pub mod books_queries;
+pub mod playback_locations_queries;
+pub mod users_queries;
+
 async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
     Ok(postgres::PgConnectOptions::new()
         .host("localhost")
@@ -89,7 +93,7 @@ pub async fn drop_tables() -> Result<(), sqlx::Error> {
 
     let query_drop_tables = "DROP TABLE books, users, playback_locations;";
 
-    let query_drop_function = "DROP FUNCTION check_playback_time'";
+    let query_drop_function = "DROP FUNCTION check_playback_time";
 
     if let Err(e) = sqlx::query(&query_drop_tables).execute(&mut conn).await {
         let pg_error = e.into_database_error().unwrap();
@@ -97,6 +101,7 @@ pub async fn drop_tables() -> Result<(), sqlx::Error> {
         let pg_error_code = pg_error2.code();
         if pg_error_code != "42P01" {
             //error code for tables not existing
+            println!("{:?}", pg_error2);
             panic!(); // TODO return an Err() here, need to implement anyhow
         }
     };
@@ -107,6 +112,7 @@ pub async fn drop_tables() -> Result<(), sqlx::Error> {
         let pg_error_code = pg_error2.code();
         if pg_error_code != "42883" {
             // error code for function not existing
+            println!("{:?}", pg_error2);
             panic!(); // TODO return an Err() here, need to implement anyhow
         }
     };
