@@ -1,4 +1,7 @@
-use sqlx::{postgres::{self, PgDatabaseError}, ConnectOptions};
+use sqlx::{
+    postgres::{self, PgDatabaseError},
+    ConnectOptions,
+};
 
 async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
     Ok(postgres::PgConnectOptions::new()
@@ -12,13 +15,11 @@ async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
         .await?)
 }
 
-
 /// Make the tables, and do nothing if they already exists; always runs at the start
 pub async fn make_tables() -> Result<(), sqlx::Error> {
     let mut conn = conn().await?;
 
     let query_make_books_table = r#"
-        -- Create "books" table
         CREATE TABLE IF NOT EXISTS books (
             id SERIAL PRIMARY KEY,
             name TEXT,
@@ -26,17 +27,15 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
             file_location TEXT
         );
     "#;
-        
+
     let query_make_users_table = r#"
-        -- Create "users" table
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username TEXT
         );
     "#;
-        
+
     let query_make_playback_locations_table = r#"
-        -- Create "playback_locations" table
         CREATE TABLE IF NOT EXISTS playback_locations (
             id SERIAL PRIMARY KEY,
             book_id INT REFERENCES books (id),
@@ -45,9 +44,8 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
             CONSTRAINT duplicate_pair UNIQUE (book_id, user_id)
         );
     "#;
-        
+
     let query_make_length_check_function = r#"
-        -- Create a trigger function to enforce the time constraint
         CREATE OR REPLACE FUNCTION check_playback_time()
             RETURNS TRIGGER AS $$
         BEGIN
@@ -58,55 +56,60 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
         END;
         $$ LANGUAGE plpgsql;
     "#;
-        
+
     let query_make_length_check_trigger = r#"
-        -- Create a trigger on "playback_locations" to call the function
         CREATE OR REPLACE TRIGGER playback_time_check
             BEFORE INSERT OR UPDATE ON playback_locations
             FOR EACH ROW
             EXECUTE FUNCTION check_playback_time();    
     "#;
 
-    sqlx::query(&query_make_books_table).execute(&mut conn).await?;
-    sqlx::query(&query_make_users_table).execute(&mut conn).await?;
-    sqlx::query(&query_make_playback_locations_table).execute(&mut conn).await?;
-    sqlx::query(&query_make_length_check_function).execute(&mut conn).await?;
-    sqlx::query(&query_make_length_check_trigger).execute(&mut conn).await?;
+    sqlx::query(&query_make_books_table)
+        .execute(&mut conn)
+        .await?;
+    sqlx::query(&query_make_users_table)
+        .execute(&mut conn)
+        .await?;
+    sqlx::query(&query_make_playback_locations_table)
+        .execute(&mut conn)
+        .await?;
+    sqlx::query(&query_make_length_check_function)
+        .execute(&mut conn)
+        .await?;
+    sqlx::query(&query_make_length_check_trigger)
+        .execute(&mut conn)
+        .await?;
 
     Ok(())
 }
-
 
 /// deletes the tables
 pub async fn drop_tables() -> Result<(), sqlx::Error> {
     let mut conn = conn().await?;
 
-    let query_drop_tables = r#"
-        DROP TABLE books, users, playback_locations;
-    "#;
-        
-    let query_drop_function = r#"
-        DROP FUNCTION check_playback_time;
-    "#;
+    let query_drop_tables = "DROP TABLE books, users, playback_locations;";
+
+    let query_drop_function = "DROP FUNCTION check_playback_time'";
 
     if let Err(e) = sqlx::query(&query_drop_tables).execute(&mut conn).await {
-        let pg_error= e.into_database_error().unwrap();
-        let pg_error2: &PgDatabaseError  = pg_error.downcast_ref();
+        let pg_error = e.into_database_error().unwrap();
+        let pg_error2: &PgDatabaseError = pg_error.downcast_ref();
         let pg_error_code = pg_error2.code();
         if pg_error_code != "42P01" {
-            panic!();
+            //error code for tables not existing
+            panic!(); // TODO return an Err() here, need to implement anyhow
         }
     };
 
     if let Err(e) = sqlx::query(&query_drop_function).execute(&mut conn).await {
-        let pg_error= e.into_database_error().unwrap();
-        let pg_error2: &PgDatabaseError  = pg_error.downcast_ref();
+        let pg_error = e.into_database_error().unwrap();
+        let pg_error2: &PgDatabaseError = pg_error.downcast_ref();
         let pg_error_code = pg_error2.code();
         if pg_error_code != "42883" {
-            panic!();
+            // error code for function not existing
+            panic!(); // TODO return an Err() here, need to implement anyhow
         }
     };
-    
 
     Ok(())
 }
@@ -117,7 +120,6 @@ pub async fn reset_tables() -> Result<(), sqlx::Error> {
     make_tables().await?;
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -132,7 +134,7 @@ mod tests {
             .block_on(async {
                 make_tables().await.unwrap();
                 drop_tables().await.unwrap();
-                drop_tables().await.unwrap();  // drop_tables() shouldn't panic if the tables don't exist
+                drop_tables().await.unwrap(); // drop_tables() shouldn't panic if the tables don't exist
                 reset_tables().await.unwrap(); // reset_tables() shouldn't panic if tables don't exist
                 make_tables().await.unwrap();
                 reset_tables().await.unwrap(); // reset_tables() shouldn't panic if tables do exist

@@ -1,15 +1,19 @@
 use axum::{
-    http::{StatusCode, header::{self, HeaderMap, HeaderName}},
+    body::StreamBody,
+    extract,
+    http::{
+        header::{self, HeaderMap, HeaderName},
+        StatusCode,
+    },
     response::IntoResponse,
     routing::{get, post},
-    Json, Router, extract,
-    body::StreamBody,
+    Json, Router,
 };
 use std::{
+    env,
     net::SocketAddr,
     path::{Path, PathBuf},
     str::FromStr,
-    env,
 };
 use tokio_util::io::ReaderStream;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -19,7 +23,6 @@ use database::make_tables;
 
 #[tokio::main]
 async fn main() {
-
     // initialize tracing
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
