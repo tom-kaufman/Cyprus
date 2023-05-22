@@ -66,7 +66,7 @@ pub async fn make_tables(passed_connection: Option<postgres::PgConnection>) -> R
         
     let query_make_length_check_trigger = r#"
         -- Create a trigger on "playback_locations" to call the function
-        CREATE TRIGGER playback_time_check
+        CREATE OR REPLACE TRIGGER playback_time_check
             BEFORE INSERT OR UPDATE ON playback_locations
             FOR EACH ROW
             EXECUTE FUNCTION check_playback_time();    
