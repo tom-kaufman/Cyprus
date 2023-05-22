@@ -133,8 +133,9 @@ mod tests {
                 make_tables().await.unwrap();
                 drop_tables().await.unwrap();
                 drop_tables().await.unwrap();  // drop_tables() shouldn't panic if the tables don't exist
-                reset_tables().await.unwrap();
-                reset_tables().await.unwrap();
+                reset_tables().await.unwrap(); // reset_tables() shouldn't panic if tables don't exist
+                make_tables().await.unwrap();
+                reset_tables().await.unwrap(); // reset_tables() shouldn't panic if tables do exist
             });
     }
 }
