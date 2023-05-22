@@ -1,4 +1,4 @@
-use sqlx::{postgres, ConnectOptions};
+use sqlx::{postgres::{self, PgDatabaseError}, ConnectOptions};
 
 async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
     Ok(postgres::PgConnectOptions::new()
@@ -13,14 +13,9 @@ async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
 }
 
 
-pub async fn make_tables(passed_connection: Option<postgres::PgConnection>) -> Result<(), sqlx::Error> {
-    let mut connection: postgres::PgConnection;
-
-    if let Some(passed_connection) = passed_connection {
-        connection = passed_connection;
-    } else {
-        connection = conn().await?;
-    };
+/// Make the tables, and do nothing if they already exists; always runs at the start
+pub async fn make_tables() -> Result<(), sqlx::Error> {
+    let mut conn = conn().await?;
 
     let query_make_books_table = r#"
         -- Create "books" table
@@ -72,11 +67,74 @@ pub async fn make_tables(passed_connection: Option<postgres::PgConnection>) -> R
             EXECUTE FUNCTION check_playback_time();    
     "#;
 
-    sqlx::query(&query_make_books_table).execute(&mut connection).await?;
-    sqlx::query(&query_make_users_table).execute(&mut connection).await?;
-    sqlx::query(&query_make_playback_locations_table).execute(&mut connection).await?;
-    sqlx::query(&query_make_length_check_function).execute(&mut connection).await?;
-    sqlx::query(&query_make_length_check_trigger).execute(&mut connection).await?;
+    sqlx::query(&query_make_books_table).execute(&mut conn).await?;
+    sqlx::query(&query_make_users_table).execute(&mut conn).await?;
+    sqlx::query(&query_make_playback_locations_table).execute(&mut conn).await?;
+    sqlx::query(&query_make_length_check_function).execute(&mut conn).await?;
+    sqlx::query(&query_make_length_check_trigger).execute(&mut conn).await?;
 
     Ok(())
+}
+
+
+/// deletes the tables
+pub async fn drop_tables() -> Result<(), sqlx::Error> {
+    let mut conn = conn().await?;
+
+    let query_drop_tables = r#"
+        DROP TABLE books, users, playback_locations;
+    "#;
+        
+    let query_drop_function = r#"
+        DROP FUNCTION check_playback_time;
+    "#;
+
+    if let Err(e) = sqlx::query(&query_drop_tables).execute(&mut conn).await {
+        let pg_error= e.into_database_error().unwrap();
+        let pg_error2: &PgDatabaseError  = pg_error.downcast_ref();
+        let pg_error_code = pg_error2.code();
+        if pg_error_code != "42P01" {
+            panic!();
+        }
+    };
+
+    if let Err(e) = sqlx::query(&query_drop_function).execute(&mut conn).await {
+        let pg_error= e.into_database_error().unwrap();
+        let pg_error2: &PgDatabaseError  = pg_error.downcast_ref();
+        let pg_error_code = pg_error2.code();
+        if pg_error_code != "42883" {
+            panic!();
+        }
+    };
+    
+
+    Ok(())
+}
+
+/// drops and then makes again the tables
+pub async fn reset_tables() -> Result<(), sqlx::Error> {
+    drop_tables().await?;
+    make_tables().await?;
+    Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_db_creation() {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                make_tables().await.unwrap();
+                drop_tables().await.unwrap();
+                drop_tables().await.unwrap();  // drop_tables() shouldn't panic if the tables don't exist
+                reset_tables().await.unwrap();
+                reset_tables().await.unwrap();
+            });
+    }
 }

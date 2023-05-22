@@ -25,7 +25,7 @@ async fn main() {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let c = make_tables(None).await.unwrap();
+    let c = make_tables().await.unwrap();
 
     // build our application with a route
     //let app = Router::new();
