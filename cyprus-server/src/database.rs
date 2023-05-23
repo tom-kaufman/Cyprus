@@ -7,7 +7,7 @@ pub mod books_queries;
 pub mod playback_locations_queries;
 pub mod users_queries;
 
-async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
+pub async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
     Ok(postgres::PgConnectOptions::new()
         .host("localhost")
         .port(5432)
@@ -27,7 +27,7 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
         CREATE TABLE IF NOT EXISTS books (
             id SERIAL PRIMARY KEY,
             name TEXT,
-            length INTERVAL,
+            length INTEGER,
             file_location TEXT
         );
     "#;
@@ -44,20 +44,20 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
             id SERIAL PRIMARY KEY,
             book_id INT REFERENCES books (id),
             user_id INT REFERENCES users (id),
-            time INTERVAL,
+            time INTEGER,
             CONSTRAINT duplicate_pair UNIQUE (book_id, user_id)
         );
     "#;
 
     let query_make_length_check_function = r#"
         CREATE OR REPLACE FUNCTION check_playback_time()
-            RETURNS TRIGGER AS $$
-        BEGIN
-            IF NEW.time > (SELECT length FROM books WHERE id = NEW.book_id) THEN
-                RAISE EXCEPTION 'Playback time exceeds the length of the corresponding book.';
-            END IF;
-            RETURN NEW;
-        END;
+        RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW.time > (SELECT length FROM books WHERE id = NEW.book_id) THEN
+                    RAISE EXCEPTION 'Playback time exceeds the length of the corresponding book.';
+                END IF;
+                RETURN NEW;
+            END;
         $$ LANGUAGE plpgsql;
     "#;
 
@@ -68,21 +68,27 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
             EXECUTE FUNCTION check_playback_time();    
     "#;
 
+    println!("0");
     sqlx::query(&query_make_books_table)
         .execute(&mut conn)
         .await?;
+    println!("1");
     sqlx::query(&query_make_users_table)
         .execute(&mut conn)
         .await?;
+    println!("2");
     sqlx::query(&query_make_playback_locations_table)
         .execute(&mut conn)
         .await?;
+    println!("3");
     sqlx::query(&query_make_length_check_function)
         .execute(&mut conn)
         .await?;
+    println!("4");
     sqlx::query(&query_make_length_check_trigger)
         .execute(&mut conn)
         .await?;
+    println!("5");
 
     Ok(())
 }

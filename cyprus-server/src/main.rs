@@ -20,6 +20,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod database;
 use database::make_tables;
+mod book;
 
 #[tokio::main]
 async fn main() {
@@ -27,8 +28,6 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
-
-    let c = make_tables().await.unwrap();
 
     // build our application with a route
     //let app = Router::new();
