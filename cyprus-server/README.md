@@ -34,7 +34,13 @@
 ## Database
 For quick iteration and easy testing, we'll connect to the PostgreSQL database running on the local host. You must first create the user `my_user` like so:
 ```
-sudu su postgres
+sudo su postgres
 psql
 CREATE USER my_user WITH PASSWORD 'password';
+```
+
+## Tests
+To avoid race conditions in the database, run tests like so:
+```
+cargo test -- --test-threads=1 --nocapture
 ```
