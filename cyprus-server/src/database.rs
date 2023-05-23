@@ -27,7 +27,7 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
         CREATE TABLE IF NOT EXISTS books (
             id SERIAL PRIMARY KEY,
             name TEXT,
-            length INTEGER,
+            length INTERVAL,
             file_location TEXT
         );
     "#;
@@ -44,7 +44,7 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
             id SERIAL PRIMARY KEY,
             book_id INT REFERENCES books (id),
             user_id INT REFERENCES users (id),
-            time INTEGER,
+            time INTERVAL,
             CONSTRAINT duplicate_pair UNIQUE (book_id, user_id)
         );
     "#;

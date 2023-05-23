@@ -1,17 +1,17 @@
 use crate::database::conn;
 /// Module for the `book` struct. Any `book` is associated with 1 row in the `books` table of the database. SQL queries related to `book`s are in `books_queries.rs`
 use serde::{Deserialize, Serialize};
-use std::path;
+use std::{path, time};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Book {
     name: String,
-    length: i32, // ms
+    length: time::Duration,
     file_location: path::PathBuf,
 }
 
 impl Book {
-    fn new(name: String, length: i32, file_location: path::PathBuf) -> Self {
+    fn new(name: String, length: time::Duration, file_location: path::PathBuf) -> Self {
         Self {
             name,
             length,
@@ -23,7 +23,7 @@ impl Book {
         // TODO parse book name, length from file
         Self {
             name: String::from("name_parsing_not_yet_implemented"),
-            length: 12345,
+            length: time::Duration::from_secs(42),
             file_location,
         }
     }
@@ -54,12 +54,12 @@ mod tests {
             .take(10)
             .collect::<Vec<u8>>();
         let random_string = String::from_utf8(random_vec_u8).unwrap();
-        let random_i32: i32 = rand::thread_rng().gen();
+        let random_u16: u16 = rand::thread_rng().gen();
         let random_path = std::env::temp_dir().join(&random_string);
 
         Book {
             name: random_string,
-            length: random_i32,
+            length: time::Duration::from_secs(random_u16 as u64),
             file_location: random_path,
         }
     }
