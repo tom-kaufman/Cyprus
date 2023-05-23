@@ -44,3 +44,4 @@ To avoid race conditions in the database, run tests like so:
 ```
 cargo test -- --test-threads=1 --nocapture
 ```
+Alternatively, you can run `cargo stt` (single thread test), using the alias set in `.cargo/config`.
