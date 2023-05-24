@@ -95,7 +95,6 @@ pub fn random_book() -> Book {
 
 async fn add_random_book_to_db() {
     let test_book = random_book();
-    let serialized = serde_json::to_string(&test_book).expect("Failed to serialize");
     test_book.add_to_db().await.unwrap();
 }
 
@@ -130,10 +129,7 @@ mod tests {
     #[tokio::test]
     async fn get_list_of_books() {
         add_a_bunch_of_books_to_db(true, 20).await;
-        let book_list = Book::get_list_of_books(None).await.unwrap();
-        for book in book_list.iter() {
-            let serialized = serde_json::to_string(book).expect("Failed to serialize");
-        }
+        let _book_list = Book::get_list_of_books(None).await.unwrap();
     }
 
     // TODO test for duplicate book name

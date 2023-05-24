@@ -78,7 +78,6 @@ fn random_playback_time(n: u8) -> PlaybackLocation {
 
 async fn add_random_playback_time_to_db(n: u8) {
     let test_playback_time = random_playback_time(n);
-    let serialized = serde_json::to_string(&test_playback_time).expect("Failed to serialize");
     test_playback_time.upsert_to_db().await.unwrap();
 }
 
