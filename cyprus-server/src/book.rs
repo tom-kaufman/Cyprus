@@ -9,7 +9,7 @@ use std::{path, time};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Book {
-    name: String,
+    pub name: String,
     length: time::Duration,
     file_location: path::PathBuf,
 }
@@ -50,7 +50,7 @@ impl Book {
         }
     }
 
-    async fn add_to_db(&self) -> Result<(), sqlx::Error> {
+    pub async fn add_to_db(&self) -> Result<(), sqlx::Error> {
         let mut conn = conn().await?;
 
         sqlx::query("INSERT INTO books (name, length, file_location) VALUES ($1, $2, $3)")
@@ -81,7 +81,7 @@ impl Book {
 }
 
 use rand::Rng;
-fn random_book() -> Book {
+pub fn random_book() -> Book {
     let random_vec_u8 = rand::thread_rng()
         .sample_iter(rand::distributions::Alphanumeric)
         .take(10)

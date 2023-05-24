@@ -110,9 +110,49 @@ pub async fn add_a_bunch_of_playback_times_to_db(reset_db_tables: bool, n: u8, n
     }
 }
 
+// TODO make this function instead find the user_id and book_id to make a PlaybackLocation, then call upsert
+pub async fn upsert_playback_location_to_db_from_username_and_book(
+    user: &String,
+    book: &String,
+    time: &time::Duration,
+) -> Result<(), sqlx::Error> {
+    let query_upsert_by_names = r#"
+        WITH user_row AS (
+            SELECT id AS user_id
+            FROM users
+            WHERE username = $1
+        ), book_row AS (
+            SELECT id AS book_id
+            FROM books
+            WHERE name = $2
+        )
+        INSERT INTO playback_locations (book_id, user_id, time)
+        VALUES (
+            (SELECT book_id FROM book_row),
+            (SELECT user_id FROM user_row),
+            $3
+        )
+        ON CONFLICT (book_id, user_id)
+        DO UPDATE SET time = EXCLUDED.time;
+    "#;
+
+    let mut conn = conn().await?;
+
+    sqlx::query(query_upsert_by_names)
+        .bind(user)
+        .bind(book)
+        .bind(time)
+        .execute(&mut conn)
+        .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::book::{random_book, Book};
+    use crate::user::{random_user, User};
 
     #[tokio::test]
     async fn test_duplicate_playback_time() {
@@ -127,5 +167,30 @@ mod tests {
     #[tokio::test]
     async fn test_add_a_bunch_of_playback_times_to_db() {
         add_a_bunch_of_playback_times_to_db(true, 20, 50).await;
+    }
+
+    #[tokio::test]
+    async fn test_add_playback_time_by_name() {
+        reset_tables().await.unwrap();
+        let test_book = random_book();
+        let test_user = random_user();
+        test_book.add_to_db().await.unwrap();
+        test_user.add_to_db().await.unwrap();
+        let test_time = time::Duration::from_millis(42);
+        upsert_playback_location_to_db_from_username_and_book(
+            &test_user.username,
+            &test_book.name,
+            &test_time,
+        )
+        .await
+        .unwrap();
+        let test_time = time::Duration::from_millis(43);
+        upsert_playback_location_to_db_from_username_and_book(
+            &test_user.username,
+            &test_book.name,
+            &test_time,
+        )
+        .await
+        .unwrap(); // shouldn't panic on existing entry
     }
 }

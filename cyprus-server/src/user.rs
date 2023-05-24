@@ -6,7 +6,7 @@ use sqlx::FromRow;
 
 #[derive(Serialize, Deserialize, Debug, FromRow)]
 pub struct User {
-    username: String,
+    pub username: String,
 }
 
 impl User {
@@ -14,7 +14,7 @@ impl User {
         Self { username }
     }
 
-    async fn add_to_db(&self) -> Result<(), sqlx::Error> {
+    pub async fn add_to_db(&self) -> Result<(), sqlx::Error> {
         let mut conn = conn().await?;
 
         sqlx::query("INSERT INTO users (username) VALUES ($1)")
@@ -48,7 +48,7 @@ impl User {
 
 use rand::Rng;
 /// Add back to tests mod?
-fn random_user() -> User {
+pub fn random_user() -> User {
     let random_vec_u8 = rand::thread_rng()
         .sample_iter(rand::distributions::Alphanumeric)
         .take(10)
