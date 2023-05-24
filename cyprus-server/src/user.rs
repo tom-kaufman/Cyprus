@@ -56,10 +56,12 @@ impl User {
 
         let mut conn = conn().await?;
 
-        Ok(sqlx::query_as::<_, PlaybackLocation>(query_get_users_playback_times)
-            .bind(&self.username)
-            .fetch_all(&mut conn)
-            .await?)
+        Ok(
+            sqlx::query_as::<_, PlaybackLocation>(query_get_users_playback_times)
+                .bind(&self.username)
+                .fetch_all(&mut conn)
+                .await?,
+        )
     }
 }
 
