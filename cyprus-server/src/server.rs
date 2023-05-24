@@ -10,16 +10,8 @@ use std::{net::SocketAddr, str::FromStr};
 mod api_response;
 use api_response::ApiResponse;
 
-pub async fn start_server() {
-    const SOCKET_ADDR: &str = "127.0.0.1:53135";
-
-    // initialize tracing
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
-
-    // build our application with a route
-    let app = Router::new()
+fn app() -> Router {
+    Router::new()
         .route("/users/:username", post(make_user))
         .route("/books", get(get_list_of_books))
         .route("/books/:bookname", get(download_book))
@@ -31,7 +23,19 @@ pub async fn start_server() {
         .route(
             "/playback/:username/:bookname",
             post(update_playback_location),
-        );
+        )
+}
+
+pub async fn start_server() {
+    const SOCKET_ADDR: &str = "127.0.0.1:53135";
+
+    // initialize tracing
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
+    // build our application with a route
+    let app = app();
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -118,3 +122,6 @@ async fn update_playback_location(
         String::from("this function is not yet implemented"),
     )
 }
+
+#[cfg(test)]
+mod test {}
