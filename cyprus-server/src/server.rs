@@ -124,4 +124,32 @@ async fn update_playback_location(
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use crate::database::reset_tables;
+
+    use super::*;
+    use axum::body;
+    use axum::response;
+    use serde_json;
+    use tower::Service; // for `call`
+    use tower::ServiceExt; // for `oneshot` and `ready`
+
+    async fn add_user_named_tom(app: Router) -> response::Response {
+        let request = http::Request::builder()
+            .method(http::Method::POST)
+            .uri("/users/tom")
+            .body(body::Body::from(""))
+            .unwrap();
+        app.oneshot(request).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn duplicate_user() {
+        reset_tables().await;
+        let app = app();
+        let response_1 = add_user_named_tom(app.clone()).await;
+        assert_eq!(response_1.status(), http::StatusCode::OK);
+        let response_2 = add_user_named_tom(app.clone()).await;
+        assert_eq!(response_2.status(), http::StatusCode::CONFLICT);
+    }
+}

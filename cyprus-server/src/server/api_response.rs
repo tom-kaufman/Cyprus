@@ -23,14 +23,14 @@ where
                     status_code: http::StatusCode::OK.as_u16(),
                     message,
                 };
-                response::Json::from(resp).into_response()
+                (http::StatusCode::OK, response::Json::from(resp)).into_response()
             }
             ApiResponse::Error(status_code, message) => {
                 let resp = ApiResponseBody {
                     status_code: status_code.as_u16(),
                     message,
                 };
-                response::Json::from(resp).into_response()
+                (status_code, response::Json::from(resp)).into_response()
             }
         }
     }
