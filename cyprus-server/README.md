@@ -21,7 +21,7 @@
 - API endpoints:
     - Update the user's playback time on a certain book
     - Download the entire book
-    - Download a section of the book, given a timestamp and length
+    - ~~Download a section of the book, given a timestamp and length~~ pushed back for later
     - Return a list of the books available
     - Return a list of the books available along with the user's playback location in each book
     - Make a user
