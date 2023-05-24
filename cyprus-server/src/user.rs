@@ -1,4 +1,3 @@
-/// Module for the `user` struct. Any `user` is associated with 1 row in the `users` table of the database. SQL queries related to `user`s are in `users_queries.rs`
 use crate::database::conn;
 use crate::playback_location::PlaybackLocation;
 use serde::{Deserialize, Serialize};
@@ -41,8 +40,26 @@ impl User {
         )
     }
 
-    async fn get_list_of_playback_times() -> Result<Vec<PlaybackLocation>, sqlx::Error> {
-        Ok(vec![])
+    async fn get_list_of_playback_times(&self) -> Result<Vec<PlaybackLocation>, sqlx::Error> {
+        let query_get_users_playback_times = r#"
+            WITH user_row AS (
+                SELECT id AS user_id
+                FROM users
+                WHERE username = $1
+            )
+            SELECT l.user_id, b.id as book_id, l.time
+            FROM playback_locations l
+            INNER JOIN books b
+            ON b.id = l.book_id
+            WHERE l.user_id = (SELECT user_id from user_row)
+        "#;
+
+        let mut conn = conn().await?;
+
+        Ok(sqlx::query_as::<_, PlaybackLocation>(query_get_users_playback_times)
+            .bind(&self.username)
+            .fetch_all(&mut conn)
+            .await?)
     }
 }
 
