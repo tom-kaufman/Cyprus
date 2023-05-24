@@ -4,10 +4,6 @@ use sqlx::{
 };
 use std::time;
 
-pub mod books_queries;
-pub mod playback_locations_queries;
-pub mod users_queries;
-
 pub async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
     Ok(postgres::PgConnectOptions::new()
         .host("localhost")

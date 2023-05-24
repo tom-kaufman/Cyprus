@@ -33,7 +33,7 @@ impl FromRow<'_, PgRow> for Book {
 }
 
 impl Book {
-    fn new(name: String, length: time::Duration, file_location: path::PathBuf) -> Self {
+    pub fn new(name: String, length: time::Duration, file_location: path::PathBuf) -> Self {
         Self {
             name,
             length,
@@ -41,7 +41,7 @@ impl Book {
         }
     }
 
-    fn new_from_path(file_location: path::PathBuf) -> Self {
+    pub fn new_from_path(file_location: path::PathBuf) -> Self {
         // TODO parse book name, length from file
         Self {
             name: String::from("name_parsing_not_yet_implemented"),
@@ -80,60 +80,63 @@ impl Book {
     }
 }
 
+use rand::Rng;
+fn random_book() -> Book {
+    let random_vec_u8 = rand::thread_rng()
+        .sample_iter(rand::distributions::Alphanumeric)
+        .take(10)
+        .collect::<Vec<u8>>();
+    let random_string = String::from_utf8(random_vec_u8).unwrap();
+    let random_u16: u16 = rand::thread_rng().gen();
+    let random_u32: u32 = (u16::MAX as u32) + (random_u16 as u32); // all random books are at least 18 hours long this way
+    let random_path = std::env::temp_dir().join(&random_string);
+
+    Book {
+        name: random_string,
+        length: time::Duration::from_millis(random_u32 as u64),
+        file_location: random_path,
+    }
+}
+
+async fn add_random_book_to_db() {
+    let test_book = random_book();
+    let serialized = serde_json::to_string(&test_book).expect("Failed to serialize");
+    println!("add_random_book_to_db(): {}", serialized);
+    test_book.add_to_db().await.unwrap();
+}
+
+use crate::database::reset_tables;
+pub async fn add_a_bunch_of_books_to_db(reset_db_tables: bool, n: u8) {
+    if reset_db_tables {
+        reset_tables().await.unwrap();
+    }
+
+    let mut handles = Vec::new();
+
+    for _ in 0..n {
+        let handle = tokio::task::spawn(async move { add_random_book_to_db().await });
+        println!("HELLO??");
+        handles.push(handle);
+    }
+
+    // Wait for all threads to complete
+    for handle in handles {
+        handle.await.unwrap();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::database::reset_tables;
-    use rand::Rng;
-
-    fn random_book() -> Book {
-        let random_vec_u8 = rand::thread_rng()
-            .sample_iter(rand::distributions::Alphanumeric)
-            .take(10)
-            .collect::<Vec<u8>>();
-        let random_string = String::from_utf8(random_vec_u8).unwrap();
-        let random_u16: u16 = rand::thread_rng().gen();
-        let random_path = std::env::temp_dir().join(&random_string);
-
-        Book {
-            name: random_string,
-            length: time::Duration::from_micros(random_u16 as u64),
-            file_location: random_path,
-        }
-    }
-
-    async fn add_random_book_to_db() {
-        let test_book = random_book();
-        let serialized = serde_json::to_string(&test_book).expect("Failed to serialize");
-        println!("add_random_book_to_db(): {}", serialized);
-        test_book.add_to_db().await.unwrap();
-    }
-
-    async fn add_a_bunch_of_books_to_db() {
-        reset_tables().await.unwrap();
-
-        let mut handles = Vec::new();
-
-        for i in 0..10 {
-            let handle = tokio::task::spawn(async move { add_random_book_to_db().await });
-
-            handles.push(handle);
-        }
-
-        // Wait for all threads to complete
-        for handle in handles {
-            handle.await.unwrap();
-        }
-    }
 
     #[tokio::test]
     async fn add_a_bunch_of_random_books() {
-        add_a_bunch_of_books_to_db().await;
+        add_a_bunch_of_books_to_db(true, 20).await;
     }
 
     #[tokio::test]
     async fn get_list_of_books() {
-        add_a_bunch_of_books_to_db().await;
+        add_a_bunch_of_books_to_db(true, 20).await;
         let book_list = Book::get_list_of_books(None).await.unwrap();
         println!("{:?}", book_list);
         for book in book_list.iter() {

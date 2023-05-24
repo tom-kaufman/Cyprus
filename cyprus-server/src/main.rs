@@ -19,9 +19,15 @@ use tokio_util::io::ReaderStream;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod database;
-use database::make_tables;
+
 mod book;
+use book::add_a_bunch_of_books_to_db;
+
 mod user;
+use user::add_a_bunch_of_users_to_db;
+
+mod playback_location;
+use playback_location::add_a_bunch_of_playback_times_to_db;
 
 #[tokio::main]
 async fn main() {
@@ -29,6 +35,11 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
+
+    let n = 15;
+    add_a_bunch_of_books_to_db(true, n).await;
+    add_a_bunch_of_users_to_db(false, n).await;
+    add_a_bunch_of_playback_times_to_db(false, n, 50).await;
 
     // build our application with a route
     //let app = Router::new();
