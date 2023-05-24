@@ -9,7 +9,7 @@ pub struct User {
 }
 
 impl User {
-    fn new(username: String) -> Self {
+    pub fn new(username: String) -> Self {
         Self { username }
     }
 
@@ -24,7 +24,7 @@ impl User {
         Ok(())
     }
 
-    async fn get_list_of_users(limit: Option<i64>) -> Result<Vec<User>, sqlx::Error> {
+    pub async fn get_list_of_users(limit: Option<i64>) -> Result<Vec<User>, sqlx::Error> {
         let mut lim = limit.unwrap_or(i64::MAX);
         if lim < 0 {
             lim = i64::MAX;
@@ -38,7 +38,7 @@ impl User {
             .await
     }
 
-    async fn get_list_of_playback_times(&self) -> Result<Vec<PlaybackLocation>, sqlx::Error> {
+    pub async fn get_list_of_playback_times(&self) -> Result<Vec<PlaybackLocation>, sqlx::Error> {
         let query_get_users_playback_times = r#"
             WITH user_row AS (
                 SELECT id AS user_id
