@@ -5,7 +5,7 @@ use sqlx::{
 use std::time;
 
 pub async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
-    Ok(postgres::PgConnectOptions::new()
+    postgres::PgConnectOptions::new()
         .host("localhost")
         .port(5432)
         .username("my_user")
@@ -13,7 +13,7 @@ pub async fn conn() -> Result<postgres::PgConnection, sqlx::Error> {
         .password("password")
         .ssl_mode(postgres::PgSslMode::Disable)
         .connect()
-        .await?)
+        .await
 }
 
 /// Make the tables, and do nothing if they already exists; always runs at the start
@@ -66,23 +66,23 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
     "#;
 
     println!("0");
-    sqlx::query(&query_make_books_table)
+    sqlx::query(query_make_books_table)
         .execute(&mut conn)
         .await?;
     println!("1");
-    sqlx::query(&query_make_users_table)
+    sqlx::query(query_make_users_table)
         .execute(&mut conn)
         .await?;
     println!("2");
-    sqlx::query(&query_make_playback_locations_table)
+    sqlx::query(query_make_playback_locations_table)
         .execute(&mut conn)
         .await?;
     println!("3");
-    sqlx::query(&query_make_length_check_function)
+    sqlx::query(query_make_length_check_function)
         .execute(&mut conn)
         .await?;
     println!("4");
-    sqlx::query(&query_make_length_check_trigger)
+    sqlx::query(query_make_length_check_trigger)
         .execute(&mut conn)
         .await?;
     println!("5");
@@ -98,7 +98,7 @@ pub async fn drop_tables() -> Result<(), sqlx::Error> {
 
     let query_drop_function = "DROP FUNCTION check_playback_time";
 
-    if let Err(e) = sqlx::query(&query_drop_tables).execute(&mut conn).await {
+    if let Err(e) = sqlx::query(query_drop_tables).execute(&mut conn).await {
         let pg_error = e.into_database_error().unwrap();
         let pg_error2: &PgDatabaseError = pg_error.downcast_ref();
         let pg_error_code = pg_error2.code();
@@ -109,7 +109,7 @@ pub async fn drop_tables() -> Result<(), sqlx::Error> {
         }
     };
 
-    if let Err(e) = sqlx::query(&query_drop_function).execute(&mut conn).await {
+    if let Err(e) = sqlx::query(query_drop_function).execute(&mut conn).await {
         let pg_error = e.into_database_error().unwrap();
         let pg_error2: &PgDatabaseError = pg_error.downcast_ref();
         let pg_error_code = pg_error2.code();

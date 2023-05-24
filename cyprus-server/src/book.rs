@@ -2,7 +2,7 @@
 use crate::database::{conn, pg_interval_to_std_time_duration};
 use serde::{Deserialize, Serialize};
 use sqlx::{
-    postgres::{types::PgInterval, PgRow},
+    postgres::{PgRow},
     FromRow, Row,
 };
 use std::{path, time};
@@ -55,7 +55,7 @@ impl Book {
 
         sqlx::query("INSERT INTO books (name, length, file_location) VALUES ($1, $2, $3)")
             .bind(&self.name)
-            .bind(&self.length)
+            .bind(self.length)
             .bind(self.file_location.to_str().unwrap())
             .execute(&mut conn)
             .await?;
@@ -64,19 +64,17 @@ impl Book {
     }
 
     async fn get_list_of_books(limit: Option<i64>) -> Result<Vec<Book>, sqlx::Error> {
-        let mut lim = limit.unwrap_or_else(|| i64::MAX);
+        let mut lim = limit.unwrap_or(i64::MAX);
         if lim < 0 {
             lim = i64::MAX;
         }
 
         let mut conn = conn().await?;
 
-        Ok(
-            sqlx::query_as::<_, Book>("SELECT name, length, file_location FROM books LIMIT ($1)")
-                .bind(&lim)
+        sqlx::query_as::<_, Book>("SELECT name, length, file_location FROM books LIMIT ($1)")
+                .bind(lim)
                 .fetch_all(&mut conn)
-                .await?,
-        )
+                .await
     }
 }
 

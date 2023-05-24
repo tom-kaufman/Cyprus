@@ -25,19 +25,17 @@ impl User {
     }
 
     async fn get_list_of_users(limit: Option<i64>) -> Result<Vec<User>, sqlx::Error> {
-        let mut lim = limit.unwrap_or_else(|| i64::MAX);
+        let mut lim = limit.unwrap_or(i64::MAX);
         if lim < 0 {
             lim = i64::MAX;
         }
 
         let mut conn = conn().await?;
 
-        Ok(
-            sqlx::query_as::<_, User>("SELECT username FROM users LIMIT ($1)")
-                .bind(&lim)
+        sqlx::query_as::<_, User>("SELECT username FROM users LIMIT ($1)")
+                .bind(lim)
                 .fetch_all(&mut conn)
-                .await?,
-        )
+                .await
     }
 
     async fn get_list_of_playback_times(&self) -> Result<Vec<PlaybackLocation>, sqlx::Error> {
@@ -56,12 +54,10 @@ impl User {
 
         let mut conn = conn().await?;
 
-        Ok(
-            sqlx::query_as::<_, PlaybackLocation>(query_get_users_playback_times)
+        sqlx::query_as::<_, PlaybackLocation>(query_get_users_playback_times)
                 .bind(&self.username)
                 .fetch_all(&mut conn)
-                .await?,
-        )
+                .await
     }
 }
 
