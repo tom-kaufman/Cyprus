@@ -21,6 +21,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod database;
 use database::make_tables;
 mod book;
+mod user;
 
 #[tokio::main]
 async fn main() {

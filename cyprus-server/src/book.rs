@@ -1,5 +1,5 @@
-use crate::database::conn;
 /// Module for the `book` struct. Any `book` is associated with 1 row in the `books` table of the database. SQL queries related to `book`s are in `books_queries.rs`
+use crate::database::{conn, pg_interval_to_std_time_duration};
 use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::{types::PgInterval, PgRow},
@@ -12,15 +12,6 @@ pub struct Book {
     name: String,
     length: time::Duration,
     file_location: path::PathBuf,
-}
-
-fn pg_interval_to_std_time_duration(interval: PgInterval) -> time::Duration {
-    if interval.months != 0 {
-        panic!("PgInterval with months != 0 not supported"); // TODO improve error handling here
-    }
-    time::Duration::from_micros(
-        ((interval.days * 24 * 3600 * 1000000) as i64 + interval.microseconds) as u64,
-    ) // PgInterval sucks!
 }
 
 impl FromRow<'_, PgRow> for Book {
@@ -150,4 +141,6 @@ mod tests {
             println!("get_list_of_books(): {}", serialized);
         }
     }
+
+    // TODO test for duplicate book name
 }

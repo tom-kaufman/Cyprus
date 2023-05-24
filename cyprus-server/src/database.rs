@@ -1,7 +1,8 @@
 use sqlx::{
-    postgres::{self, PgDatabaseError},
+    postgres::{self, types::PgInterval, PgDatabaseError},
     ConnectOptions,
 };
+use std::time;
 
 pub mod books_queries;
 pub mod playback_locations_queries;
@@ -152,4 +153,13 @@ mod tests {
                 reset_tables().await.unwrap(); // reset_tables() shouldn't panic if tables do exist
             });
     }
+}
+
+pub fn pg_interval_to_std_time_duration(interval: PgInterval) -> time::Duration {
+    if interval.months != 0 {
+        panic!("PgInterval with months != 0 not supported"); // TODO improve error handling here
+    }
+    time::Duration::from_micros(
+        ((interval.days * 24 * 3600 * 1000000) as i64 + interval.microseconds) as u64,
+    ) // PgInterval sucks!
 }
