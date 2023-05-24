@@ -33,9 +33,9 @@ impl User {
         let mut conn = conn().await?;
 
         sqlx::query_as::<_, User>("SELECT username FROM users LIMIT ($1)")
-                .bind(lim)
-                .fetch_all(&mut conn)
-                .await
+            .bind(lim)
+            .fetch_all(&mut conn)
+            .await
     }
 
     async fn get_list_of_playback_times(&self) -> Result<Vec<PlaybackLocation>, sqlx::Error> {
@@ -55,9 +55,9 @@ impl User {
         let mut conn = conn().await?;
 
         sqlx::query_as::<_, PlaybackLocation>(query_get_users_playback_times)
-                .bind(&self.username)
-                .fetch_all(&mut conn)
-                .await
+            .bind(&self.username)
+            .fetch_all(&mut conn)
+            .await
     }
 }
 
@@ -79,7 +79,6 @@ pub fn random_user() -> User {
 async fn add_random_user_to_db() {
     let test_book = random_user();
     let serialized = serde_json::to_string(&test_book).expect("Failed to serialize");
-    println!("add_random_user_to_db(): {}", serialized);
     test_book.add_to_db().await.unwrap();
 }
 
@@ -117,10 +116,8 @@ pub mod tests {
     async fn get_list_of_books() {
         add_a_bunch_of_users_to_db(true, 20).await;
         let book_list = User::get_list_of_users(None).await.unwrap();
-        println!("{:?}", book_list);
         for book in book_list.iter() {
             let serialized = serde_json::to_string(book).expect("Failed to serialize");
-            println!("get_list_of_books(): {}", serialized);
         }
     }
 }

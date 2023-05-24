@@ -65,27 +65,21 @@ pub async fn make_tables() -> Result<(), sqlx::Error> {
             EXECUTE FUNCTION check_playback_time();    
     "#;
 
-    println!("0");
     sqlx::query(query_make_books_table)
         .execute(&mut conn)
         .await?;
-    println!("1");
     sqlx::query(query_make_users_table)
         .execute(&mut conn)
         .await?;
-    println!("2");
     sqlx::query(query_make_playback_locations_table)
         .execute(&mut conn)
         .await?;
-    println!("3");
     sqlx::query(query_make_length_check_function)
         .execute(&mut conn)
         .await?;
-    println!("4");
     sqlx::query(query_make_length_check_trigger)
         .execute(&mut conn)
         .await?;
-    println!("5");
 
     Ok(())
 }

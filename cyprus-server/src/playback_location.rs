@@ -1,10 +1,7 @@
 use crate::database::{conn, pg_interval_to_std_time_duration};
 use serde::{Deserialize, Serialize};
-use sqlx::{
-    postgres::{PgRow},
-    FromRow, Row,
-};
-use std::{time};
+use sqlx::{postgres::PgRow, FromRow, Row};
+use std::time;
 
 use crate::book::add_a_bunch_of_books_to_db;
 use crate::user::add_a_bunch_of_users_to_db;
@@ -82,7 +79,6 @@ fn random_playback_time(n: u8) -> PlaybackLocation {
 async fn add_random_playback_time_to_db(n: u8) {
     let test_playback_time = random_playback_time(n);
     let serialized = serde_json::to_string(&test_playback_time).expect("Failed to serialize");
-    println!("add_random_playback_time_to_db(): {}", serialized);
     test_playback_time.upsert_to_db().await.unwrap();
 }
 
@@ -151,8 +147,8 @@ pub async fn upsert_playback_location_to_db_from_username_and_book(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::book::{random_book};
-    use crate::user::{random_user};
+    use crate::book::random_book;
+    use crate::user::random_user;
 
     #[tokio::test]
     async fn test_duplicate_playback_time() {

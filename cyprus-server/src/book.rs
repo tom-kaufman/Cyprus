@@ -1,10 +1,7 @@
 /// Module for the `book` struct. Any `book` is associated with 1 row in the `books` table of the database. SQL queries related to `book`s are in `books_queries.rs`
 use crate::database::{conn, pg_interval_to_std_time_duration};
 use serde::{Deserialize, Serialize};
-use sqlx::{
-    postgres::{PgRow},
-    FromRow, Row,
-};
+use sqlx::{postgres::PgRow, FromRow, Row};
 use std::{path, time};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -72,9 +69,9 @@ impl Book {
         let mut conn = conn().await?;
 
         sqlx::query_as::<_, Book>("SELECT name, length, file_location FROM books LIMIT ($1)")
-                .bind(lim)
-                .fetch_all(&mut conn)
-                .await
+            .bind(lim)
+            .fetch_all(&mut conn)
+            .await
     }
 }
 
@@ -99,7 +96,6 @@ pub fn random_book() -> Book {
 async fn add_random_book_to_db() {
     let test_book = random_book();
     let serialized = serde_json::to_string(&test_book).expect("Failed to serialize");
-    println!("add_random_book_to_db(): {}", serialized);
     test_book.add_to_db().await.unwrap();
 }
 
@@ -113,7 +109,6 @@ pub async fn add_a_bunch_of_books_to_db(reset_db_tables: bool, n: u8) {
 
     for _ in 0..n {
         let handle = tokio::task::spawn(async move { add_random_book_to_db().await });
-        println!("HELLO??");
         handles.push(handle);
     }
 
@@ -136,10 +131,8 @@ mod tests {
     async fn get_list_of_books() {
         add_a_bunch_of_books_to_db(true, 20).await;
         let book_list = Book::get_list_of_books(None).await.unwrap();
-        println!("{:?}", book_list);
         for book in book_list.iter() {
             let serialized = serde_json::to_string(book).expect("Failed to serialize");
-            println!("get_list_of_books(): {}", serialized);
         }
     }
 
