@@ -102,7 +102,7 @@ async fn download_book(extract::Path(bookname): extract::Path<String>) -> ApiRes
 async fn get_users_playback_locations(
     extract::Path(username): extract::Path<String>,
 ) -> ApiResponse<Vec<PlaybackLocation>> {
-    if let Ok(playback_locations) = PlaybackLocation::get_users_playback_times(username) {
+    if let Ok(playback_locations) = PlaybackLocation::get_users_playback_times(username).await {
         ApiResponse::Success(playback_locations)
     } else {
         ApiResponse::Error(
@@ -113,10 +113,11 @@ async fn get_users_playback_locations(
 }
 
 async fn get_users_playback_location(
-    extract::Path(username): extract::Path<String>,
-    extract::Path(bookname): extract::Path<String>,
+    extract::Path((username, bookname)): extract::Path<(String, String)>,
 ) -> ApiResponse<PlaybackLocation> {
-    if let Ok(playback_location) = PlaybackLocation::get_users_playback_time(username, bookname) {
+    if let Ok(playback_location) =
+        PlaybackLocation::get_users_playback_time(username, bookname).await
+    {
         if let Some(playback_location) = playback_location {
             ApiResponse::Success(playback_location)
         } else {
@@ -291,6 +292,10 @@ mod test {
             serde_json::from_str::<Vec<PlaybackLocation>>(response_body_as_str).unwrap();
 
         let test_playback_location = response_body_deserialized.get(0).unwrap();
+        println!(
+            "get_a_users_playback_location_on_some_book() first response:\n{:?}",
+            test_playback_location
+        );
 
         let request2 = http::Request::builder()
             .method(http::Method::GET)
@@ -308,6 +313,7 @@ mod test {
 
         let response_body2 = hyper::body::to_bytes(response2.into_body()).await.unwrap();
         let response_body_as_str2 = std::str::from_utf8(&response_body2).unwrap();
+        println!("response_body_as_str2:\n{:?}", response_body_as_str2);
         let response_body_deserialized2 =
             serde_json::from_str::<PlaybackLocation>(response_body_as_str2).unwrap();
 
