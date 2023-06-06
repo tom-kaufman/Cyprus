@@ -38,7 +38,7 @@ impl PlaybackLocation {
         }
     }
 
-    async fn upsert_to_db(&self) -> Result<(), sqlx::Error> {
+    pub async fn upsert_to_db(&self) -> Result<(), sqlx::Error> {
         let query_upsert_by_names = r#"
             WITH user_row AS (
                 SELECT id AS user_id
@@ -68,6 +68,17 @@ impl PlaybackLocation {
             .execute(&mut conn)
             .await?;
         Ok(())
+    }
+
+    pub fn get_users_playback_times(username: String) -> Result<Vec<Self>, sqlx::Error> {
+        todo!()
+    }
+
+    pub fn get_users_playback_time(
+        username: String,
+        bookname: String,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        todo!()
     }
 }
 

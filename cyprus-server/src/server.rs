@@ -1,4 +1,8 @@
-use crate::{book::Book, playback_location::PlaybackLocation, user::User};
+use crate::{
+    book::Book,
+    playback_location::{self, PlaybackLocation},
+    user::User,
+};
 use axum::{
     extract, http,
     routing::{get, post},
@@ -20,10 +24,7 @@ fn app() -> Router {
             "/playback/:username/:bookname",
             get(get_users_playback_location),
         )
-        .route(
-            "/playback",
-            post(update_playback_location),
-        )
+        .route("/playback", post(update_playback_location))
 }
 
 pub async fn start_server() {
@@ -100,32 +101,49 @@ async fn download_book(extract::Path(bookname): extract::Path<String>) -> ApiRes
 
 async fn get_users_playback_locations(
     extract::Path(username): extract::Path<String>,
-) -> ApiResponse<String> {
-    ApiResponse::Error(
-        http::StatusCode::NOT_IMPLEMENTED,
-        String::from("this function is not yet implemented"),
-    )
+) -> ApiResponse<Vec<PlaybackLocation>> {
+    if let Ok(playback_locations) = PlaybackLocation::get_users_playback_times(username) {
+        ApiResponse::Success(playback_locations)
+    } else {
+        ApiResponse::Error(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("server failed to get a list of playback locations for the given user"),
+        )
+    }
 }
 
 async fn get_users_playback_location(
     extract::Path(username): extract::Path<String>,
     extract::Path(bookname): extract::Path<String>,
-) -> ApiResponse<String> {
-    ApiResponse::Error(
-        http::StatusCode::NOT_IMPLEMENTED,
-        String::from("this function is not yet implemented"),
-    )
+) -> ApiResponse<PlaybackLocation> {
+    if let Ok(playback_location) = PlaybackLocation::get_users_playback_time(username, bookname) {
+        if let Some(playback_location) = playback_location {
+            ApiResponse::Success(playback_location)
+        } else {
+            ApiResponse::Error(
+                http::StatusCode::NOT_FOUND,
+                String::from("No playback location found for this book/user"),
+            )
+        }
+    } else {
+        ApiResponse::Error(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("server failed to get a list of playback locations for the given user"),
+        )
+    }
 }
 
 async fn update_playback_location(
-    extract::Path(username): extract::Path<String>,
-    extract::Path(bookname): extract::Path<String>,
     extract::Json(playback_location): extract::Json<PlaybackLocation>,
-) -> ApiResponse<String> {
-    ApiResponse::Error(
-        http::StatusCode::NOT_IMPLEMENTED,
-        String::from("this function is not yet implemented"),
-    )
+) -> ApiResponse<()> {
+    if playback_location.upsert_to_db().await.is_ok() {
+        ApiResponse::Success(())
+    } else {
+        ApiResponse::Error(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("server failed to update the playback location for this book/user"),
+        )
+    }
 }
 
 #[cfg(test)]
