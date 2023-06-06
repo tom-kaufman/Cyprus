@@ -60,7 +60,7 @@ impl Book {
         Ok(())
     }
 
-    async fn get_list_of_books(limit: Option<i64>) -> Result<Vec<Book>, sqlx::Error> {
+    pub async fn get_list_of_books(limit: Option<i64>) -> Result<Vec<Book>, sqlx::Error> {
         let mut lim = limit.unwrap_or(i64::MAX);
         if lim < 0 {
             lim = i64::MAX;

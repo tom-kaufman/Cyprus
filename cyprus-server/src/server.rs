@@ -1,6 +1,6 @@
-use crate::user::User;
+use crate::{book::Book, user::User};
 use axum::{
-    extract, http, response,
+    extract, http,
     routing::{get, post},
     Router,
 };
@@ -80,11 +80,15 @@ async fn make_user(extract::Path(username): extract::Path<String>) -> ApiRespons
     }
 }
 
-async fn get_list_of_books() -> ApiResponse<String> {
-    ApiResponse::Error(
-        http::StatusCode::NOT_IMPLEMENTED,
-        String::from("this function is not yet implemented"),
-    )
+async fn get_list_of_books() -> ApiResponse<Vec<Book>> {
+    if let Ok(list_of_books) = Book::get_list_of_books(None).await {
+        ApiResponse::Success(list_of_books)
+    } else {
+        ApiResponse::Error(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("server failed to get a list of books from the database"),
+        )
+    }
 }
 
 async fn download_book(extract::Path(bookname): extract::Path<String>) -> ApiResponse<String> {
@@ -125,13 +129,12 @@ async fn update_playback_location(
 
 #[cfg(test)]
 mod test {
+    use crate::book::add_a_bunch_of_books_to_db;
     use crate::database::reset_tables;
 
     use super::*;
     use axum::body;
     use axum::response;
-    use serde_json;
-    use tower::Service; // for `call`
     use tower::ServiceExt; // for `oneshot` and `ready`
 
     async fn add_user_named_tom(app: Router) -> response::Response {
@@ -151,5 +154,26 @@ mod test {
         assert_eq!(response_1.status(), http::StatusCode::OK);
         let response_2 = add_user_named_tom(app.clone()).await;
         assert_eq!(response_2.status(), http::StatusCode::CONFLICT);
+    }
+
+    #[tokio::test]
+    async fn get_book_list() {
+        add_a_bunch_of_books_to_db(true, 10).await;
+        let app = app();
+
+        let request = http::Request::builder()
+            .method(http::Method::GET)
+            .uri("/books")
+            .body(body::Body::from(""))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        let response_body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let response_body_as_str = std::str::from_utf8(&response_body).unwrap();
+        let response_body_deserialized =
+            serde_json::from_str::<Vec<Book>>(response_body_as_str).unwrap();
+
+        assert_eq!(response_body_deserialized.len(), 10);
     }
 }
