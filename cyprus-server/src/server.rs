@@ -21,7 +21,7 @@ fn app() -> Router {
             get(get_users_playback_location),
         )
         .route(
-            "/playback/:username/:bookname",
+            "/playback",
             post(update_playback_location),
         )
 }
@@ -344,7 +344,7 @@ mod test {
 
         let request1 = http::Request::builder()
             .method(http::Method::POST)
-            .uri(format!("/playback/{}/{}", "tom", test_book.name))
+            .uri("/playback")
             .body(body::Body::from(
                 serde_json::to_string(&test_playback_location1).unwrap(),
             ))
@@ -362,7 +362,7 @@ mod test {
 
         let request2 = http::Request::builder()
             .method(http::Method::POST)
-            .uri(format!("/playback/{}/{}", "tom", test_book.name))
+            .uri("/playback")
             .body(body::Body::from(
                 serde_json::to_string(&test_playback_location2).unwrap(),
             ))
