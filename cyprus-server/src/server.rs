@@ -1,4 +1,4 @@
-use crate::{book::Book, user::User};
+use crate::{book::Book, playback_location::PlaybackLocation, user::User};
 use axum::{
     extract, http,
     routing::{get, post},
@@ -120,6 +120,7 @@ async fn get_users_playback_location(
 async fn update_playback_location(
     extract::Path(username): extract::Path<String>,
     extract::Path(bookname): extract::Path<String>,
+    extract::Json(playback_location): extract::Json<PlaybackLocation>,
 ) -> ApiResponse<String> {
     ApiResponse::Error(
         http::StatusCode::NOT_IMPLEMENTED,
@@ -129,12 +130,18 @@ async fn update_playback_location(
 
 #[cfg(test)]
 mod test {
+    use crate::book;
     use crate::book::add_a_bunch_of_books_to_db;
+    use crate::book::random_book;
     use crate::database::reset_tables;
+    use crate::playback_location::add_a_bunch_of_playback_times_to_db;
+    use crate::playback_location::PlaybackLocation;
+    use crate::user;
 
     use super::*;
     use axum::body;
     use axum::response;
+    use std::time;
     use tower::ServiceExt; // for `oneshot` and `ready`
 
     async fn add_user_named_tom(app: Router) -> response::Response {
@@ -148,7 +155,7 @@ mod test {
 
     #[tokio::test]
     async fn duplicate_user() {
-        reset_tables().await;
+        reset_tables().await.unwrap();
         let app = app();
         let response_1 = add_user_named_tom(app.clone()).await;
         assert_eq!(response_1.status(), http::StatusCode::OK);
@@ -169,11 +176,200 @@ mod test {
 
         let response = app.oneshot(request).await.unwrap();
 
+        assert_eq!(response.status(), http::StatusCode::OK);
+
         let response_body = hyper::body::to_bytes(response.into_body()).await.unwrap();
         let response_body_as_str = std::str::from_utf8(&response_body).unwrap();
         let response_body_deserialized =
             serde_json::from_str::<Vec<Book>>(response_body_as_str).unwrap();
 
         assert_eq!(response_body_deserialized.len(), 10);
+    }
+
+    #[tokio::test]
+    async fn download_book() {
+        reset_tables().await.unwrap();
+
+        let mut book_path = std::env::current_dir().unwrap();
+        // TODO add some public domain book to repo for testing this
+        book_path.push("books");
+        book_path.push("tress.m4b");
+        println!("{:?}", book_path);
+        let mut test_book = book::Book::new_from_path(book_path);
+        test_book.name = String::from("tress");
+        test_book.add_to_db().await.unwrap();
+
+        let app = app();
+
+        let request = http::Request::builder()
+            .method(http::Method::GET)
+            .uri(format!("/books/{}", test_book.name))
+            .body(body::Body::from(""))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+
+        // TODO save the bytes of the repsonse as a file on disk
+    }
+
+    #[tokio::test]
+    async fn get_all_of_a_users_playback_locations() {
+        add_a_bunch_of_playback_times_to_db(true, 5, 50).await;
+        let users = user::User::get_list_of_users(None).await.unwrap();
+        assert_eq!(users.len(), 5);
+        let test_user = users.get(0).unwrap();
+
+        let app = app();
+
+        let request = http::Request::builder()
+            .method(http::Method::GET)
+            .uri(format!("/playback/{}", test_user.username))
+            .body(body::Body::from(""))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+
+        let response_body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let response_body_as_str = std::str::from_utf8(&response_body).unwrap();
+        let response_body_deserialized =
+            serde_json::from_str::<Vec<PlaybackLocation>>(response_body_as_str).unwrap();
+
+        println!(
+            "get_all_of_a_users_playback_locations() response:\n{:?}\n",
+            response_body_deserialized
+        )
+
+        // TODO further validation of the response; check length?
+    }
+
+    #[tokio::test]
+    async fn get_a_users_playback_location_on_some_book() {
+        // repeat get_all_of_a_users_playback_locations() so that we can get a valid
+        // book/user pair
+        add_a_bunch_of_playback_times_to_db(true, 5, 50).await;
+        let users = user::User::get_list_of_users(None).await.unwrap();
+        assert_eq!(users.len(), 5);
+        let test_user = users.get(0).unwrap();
+
+        let app1 = app();
+
+        let request = http::Request::builder()
+            .method(http::Method::GET)
+            .uri(format!("/playback/{}", test_user.username))
+            .body(body::Body::from(""))
+            .unwrap();
+
+        let response = app1.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+
+        let response_body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let response_body_as_str = std::str::from_utf8(&response_body).unwrap();
+        let response_body_deserialized =
+            serde_json::from_str::<Vec<PlaybackLocation>>(response_body_as_str).unwrap();
+
+        let test_playback_location = response_body_deserialized.get(0).unwrap();
+
+        let request2 = http::Request::builder()
+            .method(http::Method::GET)
+            .uri(format!(
+                "/playback/{}/{}",
+                test_playback_location.user_name, test_playback_location.book_name
+            ))
+            .body(body::Body::from(""))
+            .unwrap();
+
+        let app2 = app();
+        let response2 = app2.oneshot(request2).await.unwrap();
+
+        assert_eq!(response2.status(), http::StatusCode::OK);
+
+        let response_body2 = hyper::body::to_bytes(response2.into_body()).await.unwrap();
+        let response_body_as_str2 = std::str::from_utf8(&response_body2).unwrap();
+        let response_body_deserialized2 =
+            serde_json::from_str::<PlaybackLocation>(response_body_as_str2).unwrap();
+
+        println!(
+            "get_a_users_playback_location_on_some_book() response:\n{:?}\n",
+            response_body_deserialized2
+        )
+    }
+
+    #[tokio::test]
+    async fn get_a_users_playback_location_on_unread_book() {
+        add_a_bunch_of_playback_times_to_db(true, 5, 50).await;
+        let app = app();
+        add_user_named_tom(app.clone()).await;
+        let test_book = random_book();
+        test_book.add_to_db().await.unwrap();
+
+        let request = http::Request::builder()
+            .method(http::Method::GET)
+            .uri(format!("/playback/{}/{}", "tom", test_book.name))
+            .body(body::Body::from(""))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), http::StatusCode::NOT_FOUND);
+
+        let response_body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let response_body_as_str = std::str::from_utf8(&response_body).unwrap();
+        let response_body_deserialized =
+            serde_json::from_str::<String>(response_body_as_str).unwrap();
+
+        assert_eq!(
+            response_body_deserialized,
+            "No playback location found for this book/user"
+        )
+    }
+
+    #[tokio::test]
+    async fn update_playback_location_for_a_user() {
+        reset_tables().await.unwrap();
+        let app = app();
+        add_user_named_tom(app.clone()).await;
+        let test_book = random_book();
+        test_book.add_to_db().await.unwrap();
+
+        let test_playback_location1 = PlaybackLocation::new(
+            (&test_book.name).to_owned(),
+            String::from("tom"),
+            time::Duration::from_millis(1),
+        );
+
+        let request1 = http::Request::builder()
+            .method(http::Method::POST)
+            .uri(format!("/playback/{}/{}", "tom", test_book.name))
+            .body(body::Body::from(
+                serde_json::to_string(&test_playback_location1).unwrap(),
+            ))
+            .unwrap();
+
+        let response1 = app.clone().oneshot(request1).await.unwrap();
+
+        assert_eq!(http::StatusCode::OK, response1.status());
+
+        let test_playback_location2 = PlaybackLocation::new(
+            (&test_book.name).to_owned(),
+            String::from("tom"),
+            time::Duration::from_millis(2),
+        );
+
+        let request2 = http::Request::builder()
+            .method(http::Method::POST)
+            .uri(format!("/playback/{}/{}", "tom", test_book.name))
+            .body(body::Body::from(
+                serde_json::to_string(&test_playback_location2).unwrap(),
+            ))
+            .unwrap();
+
+        let response2 = app.clone().oneshot(request2).await.unwrap();
+
+        assert_eq!(http::StatusCode::OK, response2.status());
     }
 }

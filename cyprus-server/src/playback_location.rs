@@ -58,9 +58,9 @@ impl PlaybackLocation {
             ON CONFLICT (book_id, user_id)
             DO UPDATE SET time = EXCLUDED.time;
         "#;
-    
+
         let mut conn = conn().await?;
-    
+
         sqlx::query(query_upsert_by_names)
             .bind(&self.user_name)
             .bind(&self.book_name)
@@ -151,7 +151,11 @@ pub async fn upsert_playback_location_to_db_from_username_and_book(
     Ok(())
 }
 
-async fn upsert_to_db_by_ids(book_id: i64, user_id: i64, time: std::time::Duration) -> Result<(), sqlx::Error> {
+async fn upsert_to_db_by_ids(
+    book_id: i64,
+    user_id: i64,
+    time: std::time::Duration,
+) -> Result<(), sqlx::Error> {
     let mut conn = conn().await?;
 
     let query_upsert = r#"
@@ -182,8 +186,12 @@ mod tests {
         add_a_bunch_of_books_to_db(true, 3).await;
         add_a_bunch_of_users_to_db(false, 3).await;
 
-        upsert_to_db_by_ids(1, 1, time::Duration::from_secs(0)).await.unwrap();
-        upsert_to_db_by_ids(1, 1, time::Duration::from_secs(1)).await.unwrap(); // 2nd call shouldn't panic
+        upsert_to_db_by_ids(1, 1, time::Duration::from_secs(0))
+            .await
+            .unwrap();
+        upsert_to_db_by_ids(1, 1, time::Duration::from_secs(1))
+            .await
+            .unwrap(); // 2nd call shouldn't panic
     }
 
     #[tokio::test]
@@ -207,11 +215,8 @@ mod tests {
         .await
         .unwrap();
         let test_time = time::Duration::from_millis(43);
-        let test_playback_time = PlaybackLocation::new(
-            test_book.name,
-            test_user.username,
-            test_time
-        );
+        let test_playback_time =
+            PlaybackLocation::new(test_book.name, test_user.username, test_time);
         test_playback_time.upsert_to_db().await.unwrap();
     }
 }
