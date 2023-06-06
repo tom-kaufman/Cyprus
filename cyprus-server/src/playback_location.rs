@@ -8,60 +8,72 @@ use crate::user::add_a_bunch_of_users_to_db;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlaybackLocation {
-    book_id: i64,
-    user_id: i64,
+    pub book_name: String,
+    pub user_name: String,
     time: time::Duration,
 }
 
 impl FromRow<'_, PgRow> for PlaybackLocation {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
-        let book_id = row.get::<i64, usize>(0);
-        let user_id = row.get::<i64, usize>(1);
+        let book_name = row.get::<String, usize>(0);
+        let user_name = row.get::<String, usize>(1);
 
-        let time_from_row = row.get(1);
+        let time_from_row = row.get(2);
         let time = pg_interval_to_std_time_duration(time_from_row);
 
         Ok(PlaybackLocation {
-            book_id,
-            user_id,
+            book_name,
+            user_name,
             time,
         })
     }
 }
 
 impl PlaybackLocation {
-    pub fn new(book_id: i64, user_id: i64, time: time::Duration) -> Self {
+    pub fn new(book_name: String, user_name: String, time: time::Duration) -> Self {
         Self {
-            book_id,
-            user_id,
+            book_name,
+            user_name,
             time,
         }
     }
 
     async fn upsert_to_db(&self) -> Result<(), sqlx::Error> {
-        let mut conn = conn().await?;
-
-        let query_upsert = r#"
+        let query_upsert_by_names = r#"
+            WITH user_row AS (
+                SELECT id AS user_id
+                FROM users
+                WHERE username = $1
+            ), book_row AS (
+                SELECT id AS book_id
+                FROM books
+                WHERE name = $2
+            )
             INSERT INTO playback_locations (book_id, user_id, time)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (book_id, user_id) DO UPDATE
-            SET time = EXCLUDED.time;
+            VALUES (
+                (SELECT book_id FROM book_row),
+                (SELECT user_id FROM user_row),
+                $3
+            )
+            ON CONFLICT (book_id, user_id)
+            DO UPDATE SET time = EXCLUDED.time;
         "#;
-
-        sqlx::query(query_upsert)
-            .bind(self.book_id)
-            .bind(self.user_id)
+    
+        let mut conn = conn().await?;
+    
+        sqlx::query(query_upsert_by_names)
+            .bind(&self.user_name)
+            .bind(&self.book_name)
             .bind(self.time)
             .execute(&mut conn)
             .await?;
-
         Ok(())
     }
 }
 
 use rand::Rng;
 /// Add back to tests mod?
-fn random_playback_time(n: u8) -> PlaybackLocation {
+fn random_playback_time_by_ids(n: u8) -> (i64, i64, time::Duration) {
     let mut rng = rand::thread_rng();
     let random_user = rng.gen_range(1..=n);
     let random_book = rng.gen_range(1..=n);
@@ -69,16 +81,12 @@ fn random_playback_time(n: u8) -> PlaybackLocation {
     let random_u16: u16 = rand::thread_rng().gen();
     let time = time::Duration::from_millis(random_u16 as u64);
 
-    PlaybackLocation {
-        user_id: random_user as i64,
-        book_id: random_book as i64,
-        time,
-    }
+    (random_book as i64, random_user as i64, time)
 }
 
 async fn add_random_playback_time_to_db(n: u8) {
-    let test_playback_time = random_playback_time(n);
-    test_playback_time.upsert_to_db().await.unwrap();
+    let (book_id, user_id, time) = random_playback_time_by_ids(n);
+    upsert_to_db_by_ids(book_id, user_id, time).await.unwrap();
 }
 
 use crate::database::reset_tables;
@@ -143,6 +151,26 @@ pub async fn upsert_playback_location_to_db_from_username_and_book(
     Ok(())
 }
 
+async fn upsert_to_db_by_ids(book_id: i64, user_id: i64, time: std::time::Duration) -> Result<(), sqlx::Error> {
+    let mut conn = conn().await?;
+
+    let query_upsert = r#"
+        INSERT INTO playback_locations (book_id, user_id, time)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (book_id, user_id) DO UPDATE
+        SET time = EXCLUDED.time;
+    "#;
+
+    sqlx::query(query_upsert)
+        .bind(book_id)
+        .bind(user_id)
+        .bind(time)
+        .execute(&mut conn)
+        .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -154,9 +182,8 @@ mod tests {
         add_a_bunch_of_books_to_db(true, 3).await;
         add_a_bunch_of_users_to_db(false, 3).await;
 
-        let test_playback_time = PlaybackLocation::new(1, 1, time::Duration::from_secs(0));
-        test_playback_time.upsert_to_db().await.unwrap();
-        test_playback_time.upsert_to_db().await.unwrap(); // 2nd call shouldn't panic
+        upsert_to_db_by_ids(1, 1, time::Duration::from_secs(0)).await.unwrap();
+        upsert_to_db_by_ids(1, 1, time::Duration::from_secs(1)).await.unwrap(); // 2nd call shouldn't panic
     }
 
     #[tokio::test]
@@ -180,12 +207,11 @@ mod tests {
         .await
         .unwrap();
         let test_time = time::Duration::from_millis(43);
-        upsert_playback_location_to_db_from_username_and_book(
-            &test_user.username,
-            &test_book.name,
-            &test_time,
-        )
-        .await
-        .unwrap(); // shouldn't panic on existing entry
+        let test_playback_time = PlaybackLocation::new(
+            test_book.name,
+            test_user.username,
+            test_time
+        );
+        test_playback_time.upsert_to_db().await.unwrap();
     }
 }
