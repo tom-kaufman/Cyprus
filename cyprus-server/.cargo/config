@@ -1,0 +1,2 @@
+[alias]
+stt = "test -- --nocapture --test-threads=1"
