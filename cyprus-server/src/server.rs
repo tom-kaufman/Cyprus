@@ -92,11 +92,19 @@ async fn get_list_of_books() -> ApiResponse<Vec<Book>> {
     }
 }
 
-async fn download_book(extract::Path(bookname): extract::Path<String>) -> ApiResponse<String> {
-    ApiResponse::Error(
-        http::StatusCode::NOT_IMPLEMENTED,
-        String::from("this function is not yet implemented"),
-    )
+async fn download_book(extract::Path(bookname): extract::Path<String>) -> ApiResponse<()> {
+    if let Ok(book) = Book::get_book_by_name(bookname).await {
+        if let Some(book) = book {
+            // we can't pass the file path and open the tokio::fs::File because .into_response() is sync
+            let file_object = tokio::fs::File::open(book.file_location).await.unwrap();
+            let filename = book.name;
+            ApiResponse::File(file_object, filename)
+        } else {
+            ApiResponse::Error(http::StatusCode::NOT_FOUND, String::from("Requested book not in the database"))
+        }
+    } else {
+        ApiResponse::Error(http::StatusCode::INTERNAL_SERVER_ERROR, String::from("Server was unable to check the database for the book"))
+    }
 }
 
 async fn get_users_playback_locations(
@@ -210,9 +218,12 @@ mod test {
         reset_tables().await.unwrap();
 
         let mut book_path = std::env::current_dir().unwrap();
+        let mut output_path = book_path.clone();
         // TODO add some public domain book to repo for testing this
         book_path.push("books");
         book_path.push("tress.m4b");
+        output_path.push("test_output");
+        output_path.push("tress.m4b");
         println!("{:?}", book_path);
         let mut test_book = book::Book::new_from_path(book_path);
         test_book.name = String::from("tress");
@@ -369,6 +380,7 @@ mod test {
         let request1 = http::Request::builder()
             .method(http::Method::POST)
             .uri("/playback")
+            .header("Content-Type", "application/json") 
             .body(body::Body::from(
                 serde_json::to_string(&test_playback_location1).unwrap(),
             ))
@@ -387,6 +399,7 @@ mod test {
         let request2 = http::Request::builder()
             .method(http::Method::POST)
             .uri("/playback")
+            .header("Content-Type", "application/json") 
             .body(body::Body::from(
                 serde_json::to_string(&test_playback_location2).unwrap(),
             ))

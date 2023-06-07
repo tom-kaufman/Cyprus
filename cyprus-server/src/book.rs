@@ -2,13 +2,13 @@
 use crate::database::{conn, pg_interval_to_std_time_duration};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
-use std::{path, time};
+use std::{path, time, collections::VecDeque};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Book {
     pub name: String,
     length: time::Duration,
-    file_location: path::PathBuf,
+    pub file_location: path::PathBuf,
 }
 
 impl FromRow<'_, PgRow> for Book {
@@ -72,6 +72,30 @@ impl Book {
             .bind(lim)
             .fetch_all(&mut conn)
             .await
+    }
+
+    pub async fn get_book_by_name(book_name: String) -> Result<Option<Self>, sqlx::Error> {
+        let query = r#"
+            SELECT name, length, file_location
+            FROM books b
+            WHERE b.name = $1
+        "#;
+
+        let mut conn = conn().await?;
+
+        let result_books = sqlx::query_as::<_, Self>(query).bind(book_name).fetch_all(&mut conn).await?;
+        
+        let l = result_books.len();
+        assert!(l < 2); // Should be guaranteed by SQL schema
+
+        if l == 0 {
+            Ok(None)
+        } else {
+            let result = VecDeque::from(result_books)
+                .pop_front()
+                .expect("vec length must be == 1, by inspection");
+            Ok(Some(result))
+        }
     }
 }
 
