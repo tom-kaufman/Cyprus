@@ -45,3 +45,12 @@ To avoid race conditions in the database, run tests like so:
 cargo test -- --test-threads=1 --nocapture
 ```
 Alternatively, you can run `cargo stt` (single thread test), using the alias set in `.cargo/config`.
+
+
+# ToDo
+- [ ] Complete unit tests
+    - [ ] Save the returned bytes of the book file to disk
+    - [ ] Test adding a duplicate book name
+- [ ] Parse book name, book length from audio file
+- [ ] Add a public domain book to the repo for testing
+- [ ] Make the app into a docker image
