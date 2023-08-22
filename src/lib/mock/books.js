@@ -6,140 +6,210 @@ const mockBooks = [
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
     { 
         id: 1, 
         title: 'The Amateur', 
         author: 'Richard Harding Davis', 
-        cover: '$books/Amateur_1211.jpg',
+        cover: '/books/Amateur_1211.jpg',
         files: [
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3", 
-            "$books/amateur_1206_librivox/amateur_1_davis_64kb.mp3"
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
+        ] 
+    },
+    { 
+        id: 1, 
+        title: 'The Amateur', 
+        author: 'Richard Harding Davis', 
+        cover: '/books/Amateur_1211.jpg',
+        files: [
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3', 
+            '/books/amateur_1206_librivox/amateur_1_davis_64kb.mp3'
         ] 
     },
 ]
