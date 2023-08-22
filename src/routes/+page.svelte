@@ -1,5 +1,12 @@
 <script>
-    import Hello from '$lib/components/hello.svelte';
+    /** @type {import('./$types').PageData} */
+    export let data;
+
+    import BookList from '$components/BookList.svelte';
 </script>
 
-<Hello />
+{#await data.books.promise}
+    <p>loading books...</p>
+{:then books}
+    <BookList {books}/>
+{/await} 

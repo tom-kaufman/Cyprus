@@ -8,6 +8,9 @@ const config = {
 			assets: 'build',
 			fallback: 'index.html'
 		}),
+		alias: {
+			$components: "src/lib/components"
+		}
 	}
 };
 
