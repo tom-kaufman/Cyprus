@@ -10,7 +10,8 @@ const config = {
 		}),
 		alias: {
 			$components: 'src/lib/components',
-			$books: 'src/mock/books'
+			$books: 'src/mock/books',
+			$stores: 'src/lib/stores'
 		}
 	}
 };
