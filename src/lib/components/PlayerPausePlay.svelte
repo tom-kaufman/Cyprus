@@ -1,10 +1,11 @@
 <script>
-    import { playing } from "$stores/player";
+    export let togglePlay;
+    export let isPlaying;
 
-    $: src = $playing ? '/icons/play.png' : '/icons/pause.png';
+    $: src = isPlaying ? '/icons/pause.png' : '/icons/play.png';
 </script>
 
-<button on:click={playing.toggle}>
+<button on:click={togglePlay}>
         <img {src} alt="Play/Pause button" />
 </button>
 

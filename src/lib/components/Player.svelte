@@ -11,18 +11,39 @@
     import PlayerRewind from '$components/PlayerRewind.svelte';
     import PlayerPausePlay from '$components/PlayerPausePlay.svelte';
     import PlayerForward from '$components/PlayerForward.svelte';
+
+    let audio = new Audio(files[0]);
+    let isPlaying = false;
+    let timeNow = '0:00';
+    let timeMax = '0:00';
+    audio.ontimeupdate = (event) => {
+        console.log(``)
+        timeNow = audio.currentTime;
+        timeMax = audio.duration;
+    }
+
+    function togglePlay() {
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+            console.log(`playing`);
+            audio.play();
+        } else {
+            console.log(`pausing`);
+            audio.pause();
+        }
+    }
 </script>
 
 <div class="player">
     <PlayerCover {cover} />
     <PlayerTitle {title} {author} />
-    <PlayerBar {files} />
+    <PlayerBar timeNow={audio.currentTime} timeMax={audio.duration} />
     <div class="controls">
         <div class="control">
             <PlayerRewind {files} />
         </div>
         <div class="control">
-            <PlayerPausePlay {files} />
+            <PlayerPausePlay {togglePlay} {isPlaying}/>
         </div>
         <div class="control">
             <PlayerForward {files} />

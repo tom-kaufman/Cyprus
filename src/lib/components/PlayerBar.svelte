@@ -1,10 +1,13 @@
 <script>
-    export let files;
-
-    $: src = files[0];
+    export let timeNow;
+    export let timeMax;
 </script>
 
-<div class="audio-container">
+<p>{timeNow} / {timeMax}</p>
+
+
+
+<!-- <div class="audio-container">
     <audio controls>
         <source {src} type="audio/mpeg">
         Your browser does not support the audio element.
@@ -20,4 +23,4 @@
         text-align: center;
         margin-bottom: 10 px;
     }
-</style>
+</style> -->

@@ -216,14 +216,14 @@ const mockBooks = [
 
 export async function fetchBooks() {
     // Simulate an API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 50));
   
     return mockBooks;
 }
 
 export async function fetchBookById(id) {
     // Simulate an API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     let id_int = parseInt(id, 10);
 
