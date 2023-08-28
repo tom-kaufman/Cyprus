@@ -1,5 +1,1 @@
-<script>
-    import Settings from '$components/Settings.svelte';
-</script>
-
-<Settings />
+<p>This will be the Settings menu.</p>

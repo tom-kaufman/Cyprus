@@ -5,13 +5,6 @@
     export let cover;
     export let files;
 
-    import PlayerCover from '$components/PlayerCover.svelte';
-    import PlayerBar from '$components/PlayerBar.svelte';
-    import PlayerTitle from '$components/PlayerTitle.svelte';
-    import PlayerRewind from '$components/PlayerRewind.svelte';
-    import PlayerPausePlay from '$components/PlayerPausePlay.svelte';
-    import PlayerForward from '$components/PlayerForward.svelte';
-
     let audio = new Audio(files[0]);
     let isPlaying = false;
     let timeNow = '0:00';
@@ -31,21 +24,29 @@
             audio.pause();
         }
     }
+
+    $: play_pause_src = isPlaying ? '/icons/pause.png' : '/icons/play.png';
 </script>
 
 <div class="player">
-    <PlayerCover {cover} />
-    <PlayerTitle {title} {author} />
-    <PlayerBar {timeNow} {timeMax} />
+    <img src={cover} alt="Cover Art" />
+    <p>{title} by {author}</p>
+    <p>{timeNow} / {timeMax}</p>
     <div class="controls">
         <div class="control">
-            <PlayerRewind {files} />
+            <button>
+                <img src='/icons/rewind.png' alt="Rewind button" />
+            </button>
         </div>
         <div class="control">
-            <PlayerPausePlay {togglePlay} {isPlaying}/>
+            <button on:click={togglePlay}>
+                <img src={play_pause_src} alt="Play/Pause button" />
+            </button>
         </div>
         <div class="control">
-            <PlayerForward {files} />
+            <button>
+                <img src='/icons/forward.png' alt="Fast forward button" />
+            </button>
         </div>            
     </div>
 </div>
@@ -67,5 +68,17 @@
 
     .control {
         padding: 10px;
+    }
+    
+    button {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        transform: translate(0, -8px);
+        transition: all 0.1s;
+    }
+
+    button:active {
+        transform: translate(0, -2px);
     }
 </style>

@@ -1,22 +1,20 @@
 <script>
-    export let id;
-    export let title;
-    export let author;
-    export let cover;
-
-    console.log(`cover=${cover}`);
+    export let books;
 </script>
 
-<a href="/player/{id}" class="container">
-    <div class="thumbnail">
-        <img src={cover} alt="Thumbnail" />
-    </div>
-    <div>
-        <li class="text">
-            {title} by {author}
-        </li>
-    </div>
-</a>
+{#each books as book, i }
+    <a href="/player/{book.id}" class="container">
+        <div class="thumbnail">
+            <img src={book.cover} alt="Thumbnail" />
+        </div>
+        <div>
+            <li class="text">
+                {book.title} by {book.author}
+            </li>
+        </div>
+    </a>
+    <br>
+{/each}
 
 <style>
     .container {

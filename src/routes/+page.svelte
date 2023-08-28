@@ -2,7 +2,7 @@
     /** @type {import('./$types').PageData} */
     export let data;
 
-    import BookList from '$components/BookList.svelte';
+    import BookList from './BookList.svelte';
 </script>
 
 {#await data.books.promise}

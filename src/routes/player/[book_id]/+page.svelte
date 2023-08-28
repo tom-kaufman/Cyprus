@@ -1,6 +1,6 @@
 <script>
     export let data;
-    import Player from '$components/Player.svelte'
+    import Player from './Player.svelte'
 </script>
 
 {#await data.book.promise}

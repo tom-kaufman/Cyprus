@@ -1,5 +1,1 @@
-<script>
-    import Profile from '$components/Profile.svelte';
-</script>
-
-<Profile />
+<p>This will be the Profile menu.</p>
