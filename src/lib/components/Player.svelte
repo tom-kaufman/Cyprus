@@ -17,7 +17,6 @@
     let timeNow = '0:00';
     let timeMax = '0:00';
     audio.ontimeupdate = (event) => {
-        console.log(``)
         timeNow = audio.currentTime;
         timeMax = audio.duration;
     }
@@ -37,7 +36,7 @@
 <div class="player">
     <PlayerCover {cover} />
     <PlayerTitle {title} {author} />
-    <PlayerBar timeNow={audio.currentTime} timeMax={audio.duration} />
+    <PlayerBar {timeNow} {timeMax} />
     <div class="controls">
         <div class="control">
             <PlayerRewind {files} />
