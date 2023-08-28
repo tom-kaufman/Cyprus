@@ -6,32 +6,44 @@
     export let files;
 
     let audio = new Audio(files[0]);
-    let isPlaying = false;
-    let timeNow = '0:00';
-    let timeMax = '0:00';
-    audio.ontimeupdate = (event) => {
-        timeNow = audio.currentTime;
-        timeMax = audio.duration;
-    }
 
+    // Play/Pause controls
+    let isPlaying = false;
+    $: play_pause_src = isPlaying ? '/icons/pause.png' : '/icons/play.png';
     function togglePlay() {
         isPlaying = !isPlaying;
         if (isPlaying) {
-            console.log(`playing`);
             audio.play();
         } else {
-            console.log(`pausing`);
             audio.pause();
         }
     }
 
-    $: play_pause_src = isPlaying ? '/icons/pause.png' : '/icons/play.png';
+    // Playback time
+    let timeMax = 0;
+    let timeMaxStr = '00:00'
+    let timeNow = 0;
+    let timeNowStr = '00:00'
+    audio.onloadeddata = () => {
+        timeMax = audio.duration;
+        timeMaxStr = `${(audio.duration > 3600) ? (String(Math.floor(audio.duration / 3600)) + ':') : ''}${String(Math.floor((audio.duration % 3600) / 60)).padStart(2, '0')}:${String(Math.floor(audio.duration % 60)).padStart(2, '0')}`;
+    }
+    audio.ontimeupdate = () => {
+        timeNow = audio.currentTime;
+        timeNowStr = `${(audio.currentTime > 3600) ? (String(Math.floor(audio.currentTime / 3600)) + ':') : ''}${String(Math.floor((audio.currentTime % 3600) / 60)).padStart(2, '0')}:${String(Math.floor(audio.currentTime % 60)).padStart(2, '0')}`;
+    }
 </script>
 
 <div class="player">
     <img src={cover} alt="Cover Art" />
+
     <p>{title} by {author}</p>
-    <p>{timeNow} / {timeMax}</p>
+
+    <input type="range" id="seek" name="seek" min=0 max={timeMax} bind:value={audio.currentTime}/>
+    <div class="playback">
+        <p>{timeNowStr}</p> <p>{timeMaxStr}</p>
+    </div>
+
     <div class="controls">
         <div class="control">
             <button>
@@ -59,6 +71,14 @@
         align-items: center;
     }
 
+    .playback {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 360px;
+    }
+
     .controls {
         display: flex;
         flex-direction: row;
@@ -68,6 +88,10 @@
 
     .control {
         padding: 10px;
+    }
+
+    input[type="range"] {
+        width: 360px;
     }
     
     button {
