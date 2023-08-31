@@ -32,6 +32,14 @@
         timeNow = audio.currentTime;
         timeNowStr = `${(audio.currentTime > 3600) ? (String(Math.floor(audio.currentTime / 3600)) + ':') : ''}${String(Math.floor((audio.currentTime % 3600) / 60)).padStart(2, '0')}:${String(Math.floor(audio.currentTime % 60)).padStart(2, '0')}`;
     }
+
+    // Skip/rewind
+    function skipForward() {
+        audio.currentTime = Math.min(audio.currentTime + 30.0, audio.duration);
+    }
+    function skipBackward() {
+        audio.currentTime = Math.max(audio.currentTime - 30.0, 0);
+    }
 </script>
 
 <div class="player">
@@ -46,7 +54,7 @@
 
     <div class="controls">
         <div class="control">
-            <button>
+            <button on:click={skipBackward}>
                 <img src='/icons/rewind.png' alt="Rewind button" />
             </button>
         </div>
@@ -56,7 +64,7 @@
             </button>
         </div>
         <div class="control">
-            <button>
+            <button on:click={skipForward}>
                 <img src='/icons/forward.png' alt="Fast forward button" />
             </button>
         </div>            
