@@ -1,6 +1,6 @@
-use lofty::{AudioFile, TaggedFileExt};
-use std::fs::File;
-use std::io::BufReader;
+use lofty::{AudioFile, TaggedFileExt, PictureType};
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -11,6 +11,7 @@ struct Book {
     name: String,
     author: String,
     duration: Duration,
+    cover_art_path: Option<PathBuf>,
     files: Vec<BookFile>,
 }
 
@@ -91,6 +92,71 @@ fn get_book_name(tag: &lofty::Tag) -> String {
         .into()
 }
 
+
+fn cover_art_path(name: &str, book_file_path: &PathBuf) -> Result<PathBuf> {
+    if !book_file_path.is_file() {
+        return Err(CyprusError::NotFile);
+    }
+    Ok(match book_file_path.parent() {
+        Some(dir) => {
+            let mut p = PathBuf::from(dir);
+            p.push(format!("cover_{}.jpg", name));
+            p
+        },
+        None => { return Err(CyprusError::NoParent) },
+    })
+}
+
+// Embedded cover art will get passed to the frontend by file path
+// Check if we already extracted the cover art
+fn locate_extracted_cover_art(name: &str, book_file_path: &PathBuf) -> Result<Option<PathBuf>> {
+    let cover_art_path = cover_art_path(name, book_file_path)?;
+
+    if cover_art_path.exists() {
+        Ok(Some(cover_art_path))
+    } else {
+        Ok(None)
+    }
+}
+
+// Try to extract the cover art and save it at the book's path, using cover_{name}.jpg as filename
+fn extract_cover_art(tag: &lofty::Tag, name: &str, book_file_path: &PathBuf) -> Result<Option<PathBuf>> {
+    let cover_art_path = cover_art_path(name, book_file_path)?;
+
+    // First try some specific tags, fall back to taking what we can get
+    let pic = tag
+        .get_picture_type(PictureType::CoverFront)
+        .or_else(|| tag.get_picture_type(PictureType::Other))
+        .or_else(|| tag.get_picture_type(PictureType::Icon))
+        .or_else(|| tag.get_picture_type(PictureType::Illustration))
+        .or_else(|| {
+            if tag.picture_count() > 0 {
+                Some(&tag.pictures()[0])
+            } else {
+                None
+            }
+        });
+    
+    match pic {
+        Some(pic) => {
+            let mut file = match OpenOptions::new().create(true).write(true).open(&cover_art_path) {
+                Ok(file) => file,
+                Err(_) => {
+                    println!("Error while opening a file to write cover art to, falling back to no cover art");
+                    return Ok(None);
+                }
+            };
+            match file.write_all(pic.data()) {
+                Ok(_) => Ok(Some(cover_art_path)),
+                Err(_) => {
+                    println!("Error while writing cover art bytes to file, falling back to no cover art");
+                    Ok(None)
+                }
+            }
+        },
+        None => Ok(None)
+    }
+}
 
 impl Book {
     // flatten self.files into a Vec<&Chapter>
@@ -237,6 +303,16 @@ impl Book {
         let duration = calculate_duration(chapters.as_slice()); 
         let name = get_book_name(&tag);
         let author = get_author(&tag);
+
+        // We'll pass the image to the frontend by file path.
+        // Embedded cover art will get saved as cover_{Book.name}.jpg, check for it first
+        // If not present, try to extract it
+        // If no image to extract, leave as None
+        let cover_art_path = match locate_extracted_cover_art(&name, &path)? {
+            Some(cover_art_path) => Some(cover_art_path),
+            None => extract_cover_art(&tag, &name, &path)?,
+        };
+
         let book_file = BookFile { chapters, path };
 
         Ok(Self {
@@ -244,6 +320,7 @@ impl Book {
             author,
             duration,
             files: vec![book_file],
+            cover_art_path,
         })
     }
 
@@ -273,6 +350,7 @@ impl Book {
             author,
             duration,
             files: vec![book_file],
+            cover_art_path: None, // TODO
         })
     }
 
@@ -296,6 +374,7 @@ mod test {
 
     #[test]
     fn initialize_book_from_file_m4b() {
+        println!("I haven't gotten my hands on a public domain m4b with chapters quite yet, this test will fail.");
         let book = Book::from_file_path(
             "../static/books/Tress_of_the_Emerald_Sea_by_Brandon_Sanderson.m4b",
         )

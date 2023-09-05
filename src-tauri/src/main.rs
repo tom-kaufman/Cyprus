@@ -37,8 +37,12 @@ enum CyprusError {
     LoftyPrimaryTag,
     #[error("Passed a path which wasn't a directory")]
     NotDirectory,
+    #[error("Passed a path which wasn't a file")]
+    NotFile,
     #[error("Passed a path which is a folder with no mp3s")]
     EmptyFolder,
+    #[error("Tried to find the parent of a PathBuf with no parent")]
+    NoParent,
     #[error("Passed a folder with files containing mismatched metadata")]
     MixedFilesInFolder,
 }
