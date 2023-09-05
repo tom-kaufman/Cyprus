@@ -1,7 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 use serde::{Deserialize, Serialize};
+use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -10,16 +13,38 @@ use thiserror;
 use tokio;
 use tokio::sync::{self, mpsc};
 
+mod book;
+
+type Result<T> = std::result::Result<T, CyprusError>;
+
 #[derive(thiserror::Error, Debug)]
 enum CyprusError {
+    #[error("Placeholder errror")]
+    NotImplemented,
     #[error("Error while returning () to frontend")]
     SendError(#[from] tokio::sync::mpsc::error::SendError<()>),
     #[error("SystemTime failed")]
     SystemTimeError(#[from] std::time::SystemTimeError),
+    #[error("IO error")]
+    Io(#[from] io::Error),
+    #[error("mp4 crate error")]
+    Mp4(#[from] mp4::Error),
+    #[error("Error while finding MP4 chapters")]
+    Mp4Chapters,
+    #[error("Lofty error")]
+    Lofty(#[from] lofty::LoftyError),
+    #[error("Item had no primary tag")]
+    LoftyPrimaryTag,
+    #[error("Passed a path which wasn't a directory")]
+    NotDirectory,
+    #[error("Passed a path which is a folder with no mp3s")]
+    EmptyFolder,
+    #[error("Passed a folder with files containing mismatched metadata")]
+    MixedFilesInFolder,
 }
 
 impl Serialize for CyprusError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -30,9 +55,8 @@ impl Serialize for CyprusError {
 async fn toggle_coffee_loop(
     mut input_rx: mpsc::Receiver<()>,
     flow_of_coffee: Arc<AtomicBool>,
-) -> Result<(), CyprusError> {
+) -> Result<()> {
     loop {
-        println!("Looping toggle_coffee_loop");
         if input_rx.recv().await.is_some() {
             println!("Toggling coffee..");
             let initial_value = flow_of_coffee.load(Ordering::Relaxed);
@@ -45,7 +69,7 @@ async fn emit_coffee_loop(
     output_tx: mpsc::Sender<()>,
     flow_of_coffee: Arc<AtomicBool>,
     last_coffee_granted_at: Arc<sync::Mutex<SystemTime>>,
-) -> Result<(), CyprusError> {
+) -> Result<()> {
     loop {
         let mut last_coffee_granted_at = last_coffee_granted_at.lock().await;
         if flow_of_coffee.load(Ordering::Relaxed)
@@ -63,7 +87,7 @@ async fn emit_coffee_loop(
 async fn toggle_coffees(
     message: (),
     state: tauri::State<'_, sync::Mutex<mpsc::Sender<()>>>,
-) -> Result<(), CyprusError> {
+) -> Result<()> {
     println!("Clicking toggle_coffees button got to rust!");
     let proc_input_tx = state.inner().lock().await;
     Ok(proc_input_tx.send(()).await?)

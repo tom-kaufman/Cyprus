@@ -8,3 +8,6 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+static/books/Tress_of_the_Emerald_Sea_by_Brandon_Sanderson.m4b
+playground
