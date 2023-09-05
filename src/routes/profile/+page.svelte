@@ -10,6 +10,8 @@
         invoke('toggle_coffees', {message: null});
     }
 
+    let books = [];
+
     onMount(async () => {
         await listen("coffee-gained", () => { coffees += 1});
     });

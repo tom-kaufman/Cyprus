@@ -1,13 +1,15 @@
-use lofty::{AudioFile, TaggedFileExt, PictureType};
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use lofty::{AudioFile, TaggedFileExt, PictureType};
+use serde::Serialize;
+
 use crate::{CyprusError, Result};
 
-#[derive(Debug)]
-struct Book {
+#[derive(Debug, Serialize, Clone)]
+pub struct Book {
     name: String,
     author: String,
     duration: Duration,
@@ -15,13 +17,13 @@ struct Book {
     files: Vec<BookFile>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Clone)]
 struct BookFile {
     chapters: Vec<Chapter>,
     path: PathBuf,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 struct Chapter {
     title: String,
     duration: Duration,
@@ -167,7 +169,7 @@ impl Book {
     // Accept a path to a folder containing several files, each with a chapter
     // Intended for use with a collection of mp3s
     // Chapters will be sorted by file name
-    fn from_folder_path<P: AsRef<Path>>(folder_path: P) -> Result<Self> {
+    pub fn from_folder_path<P: AsRef<Path>>(folder_path: P) -> Result<Self> {
         // Make sure the path passed is a dir
         let path = folder_path.as_ref().to_path_buf();
         if !path.is_dir() {
@@ -354,7 +356,7 @@ impl Book {
         })
     }
 
-    fn from_file_path<P: AsRef<Path>>(file_path: P) -> Result<Self> {
+    pub fn from_file_path<P: AsRef<Path>>(file_path: P) -> Result<Self> {
         match Self::from_file_path_mp4(&file_path) {
             Ok(result) => Ok(result),
             Err(error) => {

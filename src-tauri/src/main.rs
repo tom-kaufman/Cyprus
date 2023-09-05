@@ -11,27 +11,28 @@ use std::time::{Duration, SystemTime};
 use tauri::{self, Manager};
 use thiserror;
 use tokio;
-use tokio::sync::{self, mpsc};
+use tokio::sync::{Mutex, mpsc::{self, Sender, Receiver}};
 
 mod book;
+use book::Book;
 
 type Result<T> = std::result::Result<T, CyprusError>;
 
 #[derive(thiserror::Error, Debug)]
-enum CyprusError {
-    #[error("Placeholder errror")]
+pub enum CyprusError {
+    #[error("Placeholder error")]
     NotImplemented,
-    #[error("Error while returning () to frontend")]
-    SendError(#[from] tokio::sync::mpsc::error::SendError<()>),
-    #[error("SystemTime failed")]
+    #[error("Error while returning () to frontend: {0}")]
+    SendError(#[from] mpsc::error::SendError<()>),
+    #[error("SystemTime failed: {0}")]
     SystemTimeError(#[from] std::time::SystemTimeError),
-    #[error("IO error")]
+    #[error("IO error: {0}")]
     Io(#[from] io::Error),
-    #[error("mp4 crate error")]
+    #[error("mp4 crate error: {0}")]
     Mp4(#[from] mp4::Error),
     #[error("Error while finding MP4 chapters")]
     Mp4Chapters,
-    #[error("Lofty error")]
+    #[error("Lofty error: {0}")]
     Lofty(#[from] lofty::LoftyError),
     #[error("Item had no primary tag")]
     LoftyPrimaryTag,
@@ -56,23 +57,27 @@ impl Serialize for CyprusError {
     }
 }
 
-async fn toggle_coffee_loop(
-    mut input_rx: mpsc::Receiver<()>,
-    flow_of_coffee: Arc<AtomicBool>,
+async fn get_books_loop(
+    mut input_rx: Receiver<()>,
+    output_tx: Sender<Vec<Book>>,
+    books: Arc<Mutex<Vec<Book>>>,
 ) -> Result<()> {
     loop {
         if input_rx.recv().await.is_some() {
-            println!("Toggling coffee..");
-            let initial_value = flow_of_coffee.load(Ordering::Relaxed);
-            flow_of_coffee.store(!initial_value, Ordering::Relaxed);
+            println!("Gathering books...");
+            let mut books = books.lock().await;
+            *books = vec![];
+            books.push(Book::from_file_path("../static/books/Tress_of_the_Emerald_Sea_by_Brandon_Sanderson.m4b")?);
+            books.push(Book::from_folder_path("../static/books/amateur_1206_librivox")?);
+            output_tx.send((*books).clone()).await;
         }
     }
 }
 
 async fn emit_coffee_loop(
-    output_tx: mpsc::Sender<()>,
+    output_tx: Sender<()>,
     flow_of_coffee: Arc<AtomicBool>,
-    last_coffee_granted_at: Arc<sync::Mutex<SystemTime>>,
+    last_coffee_granted_at: Arc<Mutex<SystemTime>>,
 ) -> Result<()> {
     loop {
         let mut last_coffee_granted_at = last_coffee_granted_at.lock().await;
@@ -88,56 +93,50 @@ async fn emit_coffee_loop(
 }
 
 #[tauri::command]
-async fn toggle_coffees(
+async fn get_books(
     message: (),
-    state: tauri::State<'_, sync::Mutex<mpsc::Sender<()>>>,
-) -> Result<()> {
-    println!("Clicking toggle_coffees button got to rust!");
+    state: tauri::State<'_, Mutex<Sender<()>>>,
+) -> Result <()> {
+    println!("Clicking Fetch Books got to Rust");
     let proc_input_tx = state.inner().lock().await;
     Ok(proc_input_tx.send(()).await?)
 }
 
-fn send_coffee<R: tauri::Runtime>(message: (), manager: &impl Manager<R>) {
-    // TODO emit_to?
-    manager.emit_all("coffee-gained", ()).unwrap();
+fn send_books<R: tauri::Runtime>(message: Vec<Book>, manager: &impl Manager<R>) {
+    // manager.emit_all("new-books", serde_json::to_string(&message).unwrap()).unwrap();
+    println!("Emitting message: {:?}", message);
+    manager.emit_all("new-books", message).unwrap();
 }
+
+type Dummy = ();
 
 #[tokio::main]
 async fn main() {
     // We'll own the runtime
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
-    let (input_tx, input_rx) = mpsc::channel::<()>(1);
-    let (output_tx, mut output_rx) = mpsc::channel::<()>(1);
+    let (input_tx_book, input_rx_book) = mpsc::channel::<()>(1);
+    let (output_tx_book, mut output_rx_book) = mpsc::channel::<Vec<Book>>(1);
 
-    // No way the state should live here? I guess this would go in some struct in async land
-    let flow_of_coffee = Arc::new(AtomicBool::new(false));
-    let last_coffee_granted_at = Arc::new(sync::Mutex::new(SystemTime::now()));
+    let books = Arc::new(Mutex::new(vec![]));
+    let books_loop = books.clone();
 
-    let flow_of_coffee_loop = flow_of_coffee.clone();
-    let flow_of_coffee_emit = flow_of_coffee.clone();
-
-    tokio::spawn(async move { toggle_coffee_loop(input_rx, flow_of_coffee_loop).await });
     tokio::spawn(async move {
-        emit_coffee_loop(
-            output_tx,
-            flow_of_coffee_emit,
-            last_coffee_granted_at.clone(),
-        )
-        .await
+        get_books_loop(input_rx_book, output_tx_book, books_loop).await;
     });
 
     // let input_tx = sync::Mutex::new(input_tx);
 
     tauri::Builder::default()
-        .manage(sync::Mutex::<mpsc::Sender<()>>::new(input_tx))
-        .invoke_handler(tauri::generate_handler![toggle_coffees])
+        .manage(Mutex::<Sender<Dummy>>::new(input_tx_book))
+        .invoke_handler(tauri::generate_handler![get_books])
         .setup(|app| {
             let app_handle = app.handle();
+
             tokio::spawn(async move {
                 loop {
-                    if let Some(output) = output_rx.recv().await {
-                        send_coffee(output, &app_handle);
+                    if let Some(output) = output_rx_book.recv().await {
+                        send_books(output, &app_handle);
                     }
                 }
             });
